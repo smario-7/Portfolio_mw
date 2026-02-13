@@ -60,6 +60,9 @@ logs/
 *.temp
 .cache/
 
+# Uploaded project attachments
+storage/
+
 # Coverage reports
 coverage/
 .nyc_output/
