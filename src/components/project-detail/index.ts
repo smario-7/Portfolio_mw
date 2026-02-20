@@ -1,0 +1,6 @@
+export { ProjectDetailHeader } from './ProjectDetailHeader'
+export { ProjectDetailLead } from './ProjectDetailLead'
+export { ProjectDetailStack } from './ProjectDetailStack'
+export { ProjectDetailLinks } from './ProjectDetailLinks'
+export { ProjectDetailAttachments } from './ProjectDetailAttachments'
+export { ProjectDetailFullDescription } from './ProjectDetailFullDescription'

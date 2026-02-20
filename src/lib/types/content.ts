@@ -19,6 +19,14 @@ export interface ToolItem {
   icon: string
 }
 
+export interface Course {
+  courseName: string
+  description: string
+  completionDate: { year: number; month: number }
+  id?: number
+  order?: number
+}
+
 export interface ContentData {
   home: {
     heroTitle: string
@@ -32,11 +40,7 @@ export interface ContentData {
   }
   about: {
     introduction: string
-    courses: Array<{
-      courseName: string
-      description: string
-      completionDate: { year: number; month: number }
-    }>
+    courses: Course[]
     skills: { [key: string]: string[] }
     tools?: string[]
   }

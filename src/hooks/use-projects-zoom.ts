@@ -11,7 +11,7 @@ export function useProjectsZoom(options: UseProjectsZoomOptions) {
   const [zoomOpen, setZoomOpen] = useState(false)
   const [zoomPhase, setZoomPhase] = useState<ZoomPhase>('idle')
   const scrollToRestoreRef = useRef<number | null>(null)
-  const zoomTriggerRef = useRef<HTMLButtonElement>(null)
+  const zoomTriggerRef = useRef<HTMLButtonElement | null>(null)
   const wasZoomOpenRef = useRef(false)
 
   useEffect(() => {

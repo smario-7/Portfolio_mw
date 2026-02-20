@@ -1,5 +1,46 @@
 [
   {
+    "id": 2,
+    "title": "Platforma e-commerce",
+    "description": "Nowoczesna platforma sprzedażowa z pełną integracją płatności i zaawansowanym panelem administracyjnym.",
+    "category": "Frontend",
+    "stack": [
+      "Next.js",
+      "TypeScript",
+      "Stripe",
+      "PostgreSQL"
+    ],
+    "image": "/projects/ecommerce.jpg",
+    "github": "https://github.com",
+    "demo": "https://example.com",
+    "color": "from-purple-500 to-pink-500",
+    "order": 1,
+    "fullDescription": [
+      {
+        "type": "text",
+        "content": "Moje tekstry \nMarkdown\nZobaczymy co z tego wyjdzie \n\n[opis linku](www.mario.pl)\n\n**Gruby tekst**"
+      },
+      {
+        "type": "screenshot",
+        "path": "/projects/ecommerce.jpg",
+        "alt": ""
+      },
+      {
+        "type": "code",
+        "sourceFile": "storage/projects/2/my_first_notebook.ipynb",
+        "sourceType": "ipynb",
+        "fragmentId": ""
+      }
+    ],
+    "attachments": [
+      {
+        "label": "my_first_notebook.ipynb",
+        "path": "storage/projects/2/my_first_notebook.ipynb",
+        "type": "ipynb"
+      }
+    ]
+  },
+  {
     "id": 1,
     "title": "System AI do analizy danych",
     "description": "Inteligentny system wykorzystujący machine learning do automatycznej analizy i wizualizacji dużych zbiorów danych.",
@@ -14,24 +55,14 @@
     "github": "https://github.com",
     "demo": "https://example.com",
     "color": "from-blue-500 to-cyan-500",
-    "fullDescription": "Mój opis projektu !!!",
-    "attachments": []
-  },
-  {
-    "id": 2,
-    "title": "Platforma e-commerce",
-    "description": "Nowoczesna platforma sprzedażowa z pełną integracją płatności i zaawansowanym panelem administracyjnym.",
-    "category": "Frontend",
-    "stack": [
-      "Next.js",
-      "TypeScript",
-      "Stripe",
-      "PostgreSQL"
+    "fullDescription": [
+      {
+        "type": "text",
+        "content": "Mój opis projektu !!!"
+      }
     ],
-    "image": "/projects/ecommerce.jpg",
-    "github": "https://github.com",
-    "demo": "https://example.com",
-    "color": "from-purple-500 to-pink-500"
+    "attachments": [],
+    "order": 2
   },
   {
     "id": 3,
@@ -47,7 +78,8 @@
     "image": "/projects/gateway.jpg",
     "github": "https://github.com",
     "demo": "https://example.com",
-    "color": "from-orange-500 to-red-500"
+    "color": "from-orange-500 to-red-500",
+    "order": 3
   },
   {
     "id": 4,
@@ -63,7 +95,8 @@
     "image": "/projects/dashboard.jpg",
     "github": "https://github.com",
     "demo": "https://example.com",
-    "color": "from-green-500 to-emerald-500"
+    "color": "from-green-500 to-emerald-500",
+    "order": 4
   },
   {
     "id": 5,
@@ -80,7 +113,8 @@
     "github": "https://github.com",
     "demo": "https://example.com",
     "color": "from-indigo-500 to-blue-500",
-    "attachments": []
+    "attachments": [],
+    "order": 5
   },
   {
     "id": 6,
@@ -96,7 +130,8 @@
     "image": "/projects/chatbot.jpg",
     "github": "https://github.com",
     "demo": "https://example.com",
-    "color": "from-yellow-500 to-orange-500"
+    "color": "from-yellow-500 to-orange-500",
+    "order": 6
   },
   {
     "id": 7,
@@ -111,7 +146,8 @@
     ],
     "github": "https://github.com",
     "demo": "https://example.com",
-    "color": "from-teal-500 to-cyan-500"
+    "color": "from-teal-500 to-cyan-500",
+    "order": 7
   },
   {
     "id": 8,
@@ -126,6 +162,7 @@
     ],
     "github": "https://github.com",
     "demo": "https://example.com",
-    "color": "from-rose-500 to-pink-500"
+    "color": "from-rose-500 to-pink-500",
+    "order": 8
   }
 ]

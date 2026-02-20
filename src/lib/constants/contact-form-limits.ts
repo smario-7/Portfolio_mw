@@ -1,0 +1,7 @@
+export const CONTACT_FORM_LIMITS = {
+  NAME_MIN: 2,
+  NAME_MAX: 50,
+  EMAIL_MAX: 50,
+  MESSAGE_MIN: 10,
+  MESSAGE_MAX: 500,
+} as const

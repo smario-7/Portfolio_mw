@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { Project } from '@/lib/types'
+import type { Project, ProjectDetailBlock } from '@/lib/types'
+import { fullDescriptionToBlocks } from '@/lib/data/project-normalize'
 import { validateProjectForm, validateProjectFormPartial, type ProjectFormData, type ProjectFormErrors } from '@/lib/validation/project-validation'
 import { isValidAttachmentFile } from '@/lib/constants/file-types'
 import { toast } from 'sonner'
@@ -28,32 +29,40 @@ export interface UseProjectFormReturn {
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'image' | 'pdf' | 'ipynb') => void
   handleAttachmentFiles: (e: React.ChangeEvent<HTMLInputElement>) => void
   removeAttachmentFile: (index: number) => void
+  addBlock: (block: ProjectDetailBlock) => void
+  removeBlock: (index: number) => void
+  moveBlock: (fromIndex: number, toIndex: number) => void
+  updateBlock: (index: number, block: ProjectDetailBlock) => void
   validateForm: () => boolean
   resetForm: () => void
 }
 
 const getInitialFormData = (initialData?: Partial<Project>): ProjectFormData => {
+  const emptyDownloadLinks = { pdf: undefined, ipynb: undefined, md: undefined, image: undefined }
   if (initialData) {
     return {
       title: initialData.title ?? '',
       shortDescription: initialData.description ?? '',
-      description: initialData.fullDescription ?? '',
+      fullDescriptionBlocks: fullDescriptionToBlocks(initialData.fullDescription),
       technologies: initialData.stack ?? [],
       githubUrl: initialData.github ?? '',
       demoUrl: initialData.demo ?? '',
       category: initialData.category ?? 'Frontend',
       featured: false,
-      status: 'draft',
+      status: initialData.status === 'published' ? 'published' : 'draft',
       image: null,
+      imagePath: initialData.image ?? '',
       pdf: null,
       ipynb: null,
+      downloadLinks: initialData.downloadLinks ?? emptyDownloadLinks,
+      color: initialData.color ?? '',
     }
   }
 
   return {
     title: '',
-    description: '',
     shortDescription: '',
+    fullDescriptionBlocks: [],
     technologies: [],
     githubUrl: '',
     demoUrl: '',
@@ -61,8 +70,11 @@ const getInitialFormData = (initialData?: Partial<Project>): ProjectFormData => 
     featured: false,
     status: 'draft',
     image: null,
+    imagePath: '',
     pdf: null,
     ipynb: null,
+    downloadLinks: emptyDownloadLinks,
+    color: '',
   }
 }
 
@@ -80,12 +92,13 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
 
   const initialFormDataRef = useRef<ProjectFormData>(formData)
 
+  // Celowo tylko initialData w zależnościach – reset formularza przy zmianie projektu, bez reakcji na każdą zmianę formData.
   useEffect(() => {
     if (initialData) {
       const newFormData = getInitialFormData(initialData)
       const currentDataString = JSON.stringify(formData)
       const newDataString = JSON.stringify(newFormData)
-      
+
       if (currentDataString !== newDataString) {
         setFormData(newFormData)
         initialFormDataRef.current = newFormData
@@ -178,7 +191,7 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
     const files = Array.from(e.target.files ?? [])
     const allowed = files.filter((f) => isValidAttachmentFile(f.name))
     if (allowed.length < files.length) {
-      toast.error('Dozwolone tylko .pdf, .ipynb, .md')
+      toast.error('Dozwolone tylko .pdf, .ipynb, .md, .py')
     }
     setAttachmentFiles((prev) => [...prev, ...allowed])
     e.target.value = ''
@@ -186,6 +199,38 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
 
   const removeAttachmentFile = useCallback((index: number) => {
     setAttachmentFiles((prev) => prev.filter((_, i) => i !== index))
+  }, [])
+
+  const addBlock = useCallback((block: ProjectDetailBlock) => {
+    setFormData((prev) => ({
+      ...prev,
+      fullDescriptionBlocks: [...prev.fullDescriptionBlocks, block],
+    }))
+  }, [])
+
+  const removeBlock = useCallback((index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      fullDescriptionBlocks: prev.fullDescriptionBlocks.filter((_, i) => i !== index),
+    }))
+  }, [])
+
+  const moveBlock = useCallback((fromIndex: number, toIndex: number) => {
+    setFormData((prev) => {
+      const blocks = [...prev.fullDescriptionBlocks]
+      const [removed] = blocks.splice(fromIndex, 1)
+      blocks.splice(toIndex, 0, removed)
+      return { ...prev, fullDescriptionBlocks: blocks }
+    })
+  }, [])
+
+  const updateBlock = useCallback((index: number, block: ProjectDetailBlock) => {
+    setFormData((prev) => {
+      const blocks = [...prev.fullDescriptionBlocks]
+      if (index < 0 || index >= blocks.length) return prev
+      blocks[index] = block
+      return { ...prev, fullDescriptionBlocks: blocks }
+    })
   }, [])
 
   const validateForm = useCallback((): boolean => {
@@ -223,6 +268,10 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
     handleFileChange,
     handleAttachmentFiles,
     removeAttachmentFile,
+    addBlock,
+    removeBlock,
+    moveBlock,
+    updateBlock,
     validateForm,
     resetForm,
   }

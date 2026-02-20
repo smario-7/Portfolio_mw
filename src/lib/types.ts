@@ -14,28 +14,15 @@ export interface ScreenQuad {
 
 export type ZoomPhase = 'idle' | 'opening' | 'open' | 'closing'
 
-export type ProjectCategory = 'Frontend' | 'Backend' | 'AI' | 'Analiza Danych' | 'Full Stack'
-
-export type ProjectFilter = 'Wszystkie' | ProjectCategory
-
-export type AttachmentType = 'pdf' | 'ipynb' | 'md'
-
-export interface ProjectAttachment {
-  label: string
-  path: string
-  type?: AttachmentType
-}
-
-export interface Project {
-  id: number
-  title: string
-  description: string
-  category: ProjectCategory
-  stack: string[]
-  image?: string
-  github: string
-  demo: string
-  color?: string
-  fullDescription?: string
-  attachments?: ProjectAttachment[]
-}
+export type {
+  ProjectCategory,
+  ProjectFilter,
+  AttachmentType,
+  ProjectAttachment,
+  ProjectDownloadLinks,
+  Project,
+  ProjectDetailBlock,
+  BlockText,
+  BlockScreenshot,
+  BlockCode,
+} from './types/project'

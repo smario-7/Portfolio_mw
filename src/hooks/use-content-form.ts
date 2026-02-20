@@ -104,6 +104,16 @@ export function useContentForm(options: UseContentFormOptions): UseContentFormRe
 
   const handleAddCourse = useCallback(() => {
     const now = new Date()
+    const courses = content.about.courses
+    
+    // Oblicz maksymalne wartości id i order z istniejących kursów
+    const maxId = courses.length > 0
+      ? Math.max(...courses.map(c => c.id ?? 0), 0)
+      : 0
+    const maxOrder = courses.length > 0
+      ? Math.max(...courses.map(c => c.order ?? 0), 0)
+      : 0
+    
     setContent({
       ...content,
       about: {
@@ -117,6 +127,8 @@ export function useContentForm(options: UseContentFormOptions): UseContentFormRe
               year: now.getFullYear(),
               month: now.getMonth() + 1,
             },
+            id: maxId + 1,
+            order: maxOrder + 1,
           },
         ],
       },

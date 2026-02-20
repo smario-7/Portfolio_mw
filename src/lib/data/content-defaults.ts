@@ -14,9 +14,9 @@ export const DEFAULT_CONTENT: ContentData = {
   about: {
     introduction: 'Jestem pełnoetatowym developerem z ponad 5 latami doświadczenia w tworzeniu aplikacji webowych. Pasjonuję się tworzeniem eleganckich, wydajnych rozwiązań, które rozwiązują rzeczywiste problemy.',
     courses: [
-      { courseName: 'Senior Developer', description: 'Pracuję nad zaawansowanymi systemami AI i ML', completionDate: { year: 2023, month: 12 } },
-      { courseName: 'Full Stack Developer', description: 'Budowanie aplikacji webowych end-to-end', completionDate: { year: 2021, month: 6 } },
-      { courseName: 'Junior Developer', description: 'Nauka i rozwój podstawowych umiejętności', completionDate: { year: 2019, month: 1 } },
+      { id: 1, order: 1, courseName: 'Senior Developer', description: 'Pracuję nad zaawansowanymi systemami AI i ML', completionDate: { year: 2023, month: 12 } },
+      { id: 2, order: 2, courseName: 'Full Stack Developer', description: 'Budowanie aplikacji webowych end-to-end', completionDate: { year: 2021, month: 6 } },
+      { id: 3, order: 3, courseName: 'Junior Developer', description: 'Nauka i rozwój podstawowych umiejętności', completionDate: { year: 2019, month: 1 } },
     ],
     skills: {
       'Frontend': ['React', 'Next.js', 'TypeScript', 'Tailwind CSS'],

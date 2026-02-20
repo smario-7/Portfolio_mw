@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ArrowUpRight, Github, ExternalLink } from 'lucide-react'
 import type { Project } from '@/lib/types'
+import { TechIcon } from '@/components/tech-icon'
 
 interface ProjectCardProps {
   project: Project
@@ -33,33 +34,40 @@ export function ProjectCard({ project, onSelect }: ProjectCardProps) {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {stack.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
+              <Badge key={tag} variant="secondary" className="inline-flex items-center gap-1 text-xs">
+                <TechIcon tech={tag} className="h-3 w-3" />
                 {tag}
               </Badge>
             ))}
           </div>
-          <div className="flex gap-4">
-            <a
-              href={github}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              onClick={(e) => onSelect && e.stopPropagation()}
-            >
-              <Github className="h-4 w-4" />
-              <span>GitHub</span>
-            </a>
-            <a
-              href={demo}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-              onClick={(e) => onSelect && e.stopPropagation()}
-            >
-              <ExternalLink className="h-4 w-4" />
-              <span>Demo</span>
-            </a>
-          </div>
+          {(github?.trim() || demo?.trim()) && (
+            <div className="flex gap-4">
+              {github?.trim() && (
+                <a
+                  href={github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={(e) => onSelect && e.stopPropagation()}
+                >
+                  <Github className="h-4 w-4" />
+                  <span>GitHub</span>
+                </a>
+              )}
+              {demo?.trim() && (
+                <a
+                  href={demo}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={(e) => onSelect && e.stopPropagation()}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  <span>Demo</span>
+                </a>
+              )}
+            </div>
+          )}
         </CardContent>
         <CardFooter>
           {onSelect ? (
@@ -67,13 +75,18 @@ export function ProjectCard({ project, onSelect }: ProjectCardProps) {
               Zobacz szczegóły
               <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
             </span>
-          ) : (
+          ) : demo?.trim() ? (
             <Button variant="outline" className="w-full gap-2 bg-transparent group-hover:bg-primary group-hover:text-primary-foreground" asChild>
               <a href={demo} target="_blank" rel="noopener noreferrer">
                 Zobacz szczegóły
                 <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
               </a>
             </Button>
+          ) : (
+            <span className="flex w-full items-center justify-center gap-2 text-sm font-medium">
+              Zobacz szczegóły
+              <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+            </span>
           )}
         </CardFooter>
       </Card>

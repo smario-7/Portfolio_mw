@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FileText, ImageIcon, Settings, LogOut, Home, User, Mail } from 'lucide-react'
+import { LayoutDashboard, FileText, Settings, LogOut, Home, User, Mail } from 'lucide-react'
+import { ADMIN_SIDEBAR_WIDTH_CLASS } from '@/lib/constants/layout'
 
 export function Sidebar() {
   const { pathname } = useLocation()
@@ -10,12 +11,11 @@ export function Sidebar() {
     { to: '/admin/content/home', label: 'Home', icon: Home },
     { to: '/admin/content/about', label: 'O mnie', icon: User },
     { to: '/admin/content/contact', label: 'Kontakt', icon: Mail },
-    { to: '/admin/media', label: 'Media', icon: ImageIcon },
     { to: '/admin/settings', label: 'Ustawienia', icon: Settings },
   ]
 
   return (
-    <aside className="w-64 border-r-2 border-border bg-card/50 backdrop-blur-sm p-6 sticky top-0 h-screen overflow-y-auto">
+    <aside className={`${ADMIN_SIDEBAR_WIDTH_CLASS} border-r-2 border-border bg-card/50 backdrop-blur-sm p-6 sticky top-0 h-screen overflow-y-auto`}>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-primary">Portfolio</h1>
         <p className="text-xs text-muted-foreground">Panel administracyjny</p>

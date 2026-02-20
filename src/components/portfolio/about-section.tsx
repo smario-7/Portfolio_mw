@@ -1,75 +1,7 @@
-import {
-  Briefcase,
-  Code,
-  Zap,
-  GitBranch,
-  Terminal,
-  MessageCircle,
-  Container,
-  GraduationCap,
-  Sparkles,
-  Code2,
-  Braces,
-  Layers,
-  Server,
-  Database,
-  Palette,
-  Cloud,
-  Brain,
-  Workflow,
-  Github,
-  Coffee,
-  Leaf,
-  Hexagon,
-  Circle,
-  Box,
-  Play,
-  Cog,
-  FlaskConical,
-  TestTube,
-  Package,
-  type LucideIcon,
-} from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { getToolsCatalog } from '@/lib/services/projects-service'
-
-const iconNameToComponent: Record<string, LucideIcon> = {
-  Briefcase,
-  Code,
-  Zap,
-  GraduationCap,
-  Sparkles,
-  GitBranch,
-  Terminal,
-  MessageCircle,
-  Container,
-  Code2,
-  Braces,
-  Layers,
-  Server,
-  Database,
-  Palette,
-  Cloud,
-  Brain,
-  Workflow,
-  Github,
-  Coffee,
-  Leaf,
-  Hexagon,
-  Circle,
-  Box,
-  Play,
-  Cog,
-  FlaskConical,
-  TestTube,
-  Package,
-}
-
-function getToolIcon(iconName?: string): LucideIcon {
-  if (!iconName?.trim()) return Code
-  const Icon = iconNameToComponent[iconName.trim()]
-  return Icon ?? Code
-}
+import { getToolIcon } from '@/lib/constants/tech-icons'
 
 export function AboutSection() {
   const { content } = usePortfolio()
@@ -89,6 +21,12 @@ export function AboutSection() {
     .map((s) => s.trim())
     .filter(Boolean)
   const courses = content.about?.courses ?? []
+  
+  const sortedCourses = [...courses].sort((a, b) => {
+    const orderA = a.order ?? a.id ?? 0
+    const orderB = b.order ?? b.id ?? 0
+    return orderA - orderB
+  })
 
   const monthNames = [
     'Styczeń',
@@ -131,15 +69,15 @@ export function AboutSection() {
         )}
       </div>
 
-      {courses.length > 0 && (
+      {sortedCourses.length > 0 && (
         <div className="rounded-xl border-2 border-border bg-card/40 p-6 md:p-8">
           <h2 className="pb-2 mb-6 border-b border-border text-sm font-medium uppercase tracking-wider text-muted-foreground">
             Kursy
           </h2>
           <div className="space-y-6">
-            {courses.map((course, i) => (
+            {sortedCourses.map((course, i) => (
               <div
-                key={i}
+                key={course.id ?? i}
                 className="hover-lift rounded-lg border-2 border-border bg-card/30 p-6 transition-all hover:border-primary"
               >
                 <div className="flex items-start gap-4">

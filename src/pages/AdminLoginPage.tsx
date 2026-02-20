@@ -1,12 +1,41 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Lock } from 'lucide-react'
+import { signInWithGoogle, isAuthAvailable } from '@/lib/supabase/auth'
 
 export default function AdminLogin() {
   const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const redirectTo = useMemo(
+    () =>
+      `${window.location.origin}${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/admin/dashboard`,
+    []
+  )
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (!hash) return
+    const params = new URLSearchParams(hash)
+    const error = params.get('error')
+    if (error) {
+      setErrorMessage('Logowanie nie powiodło się. Spróbuj ponownie.')
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [])
 
   const handleGoogleLogin = () => {
-    navigate('/admin/dashboard')
+    if (isAuthAvailable()) {
+      setLoading(true)
+      setErrorMessage(null)
+      signInWithGoogle(redirectTo)
+    } else {
+      navigate('/admin/dashboard')
+    }
   }
+
+  const authAvailable = isAuthAvailable()
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -37,13 +66,24 @@ export default function AdminLogin() {
             </div>
           </div>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-border bg-background px-6 py-3 font-medium text-foreground transition-all hover:bg-card hover:border-primary hover:text-primary active:scale-95"
-          >
-            <Lock className="h-5 w-5" />
-            <span>Zaloguj się przez Google</span>
-          </button>
+          <div className="space-y-2">
+            {!authAvailable && (
+              <p className="text-center text-sm text-muted-foreground">
+                Logowanie niedostępne (brak konfiguracji)
+              </p>
+            )}
+            <button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-border bg-background px-6 py-3 font-medium text-foreground transition-all hover:bg-card hover:border-primary hover:text-primary active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Lock className="h-5 w-5" />
+              <span>{loading ? 'Przekierowuję…' : 'Zaloguj się przez Google'}</span>
+            </button>
+            {errorMessage && (
+              <p className="text-center text-sm text-destructive">{errorMessage}</p>
+            )}
+          </div>
 
           <p className="text-center text-xs text-muted-foreground">
             Bezpieczne logowanie przez konto Google

@@ -11,14 +11,18 @@ const storageDir = path.join(rootDir, 'storage')
 const contentPath = path.join(dataDir, 'content.json')
 const projectsPath = path.join(dataDir, 'projects.json')
 
-const ALLOWED_EXT = ['.pdf', '.ipynb', '.md']
+const ALLOWED_EXT = ['.pdf', '.ipynb', '.md', '.py', '.png', '.jpg', '.jpeg', '.webp']
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
-    const id = req.params.id
-    const dir = path.join(storageDir, 'projects', String(id))
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    cb(null, dir)
+    try {
+      const id = req.params.id
+      const dir = path.join(storageDir, 'projects', String(id))
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+      cb(null, dir)
+    } catch (err) {
+      cb(err)
+    }
   },
   filename: (_req, file, cb) => {
     const base = path.basename(file.originalname, path.extname(file.originalname))
@@ -33,7 +37,7 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase()
     if (ALLOWED_EXT.includes(ext)) return cb(null, true)
-    cb(new Error('Dozwolone tylko pliki .pdf, .ipynb, .md'))
+    cb(new Error('Dozwolone: .pdf, .ipynb, .md, .py, .png, .jpg, .jpeg, .webp'))
   },
 })
 
@@ -129,15 +133,68 @@ app.post('/api/projects', (req, res) => {
   }
 })
 
+app.post('/api/projects/:id/storage/init', (req, res) => {
+  try {
+    const id = req.params.id
+    if (!/^\d+$/.test(id)) {
+      res.status(400).json({ error: 'Nieprawidłowy identyfikator projektu' })
+      return
+    }
+    const dir = path.join(storageDir, 'projects', id)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+    res.status(200).json({ ok: true })
+  } catch (err) {
+    console.error('[POST /api/projects/:id/storage/init]', err.message)
+    res.status(500).json({ error: String(err.message) })
+  }
+})
+
+app.delete('/api/projects/:id/storage', (req, res) => {
+  try {
+    const id = req.params.id
+    if (!/^\d+$/.test(id)) {
+      res.status(400).json({ error: 'Nieprawidłowy identyfikator projektu' })
+      return
+    }
+    const relativeDir = path.join('projects', id)
+    const fullDir = path.join(storageDir, relativeDir)
+    const resolved = path.resolve(fullDir)
+    const storageResolved = path.resolve(storageDir)
+    if (!resolved.startsWith(storageResolved) || resolved === storageResolved) {
+      res.status(400).json({ error: 'Nieprawidłowa ścieżka' })
+      return
+    }
+    if (fs.existsSync(resolved)) {
+      fs.rmSync(resolved, { recursive: true, force: true })
+    }
+    res.status(200).json({ ok: true })
+  } catch (err) {
+    console.error('[DELETE /api/projects/:id/storage]', err.message)
+    res.status(500).json({ error: String(err.message) })
+  }
+})
+
 app.post('/api/projects/:id/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'Brak pliku' })
       return
     }
-    const relativePath = path.relative(storageDir, req.file.path).replace(/\\/g, '/')
+    const fullPath = req.file.path ?? path.join(req.file.destination ?? '', req.file.filename ?? '')
+    if (!fullPath || !fs.existsSync(fullPath)) {
+      res.status(500).json({ error: 'Plik nie został zapisany na dysku' })
+      return
+    }
+    const relativePath = path.relative(storageDir, fullPath).replace(/\\/g, '/')
+    if (relativePath.startsWith('..')) {
+      res.status(500).json({ error: 'Nieprawidłowa ścieżka zapisu' })
+      return
+    }
     const ext = path.extname(req.file.originalname).toLowerCase()
-    const type = ext === '.pdf' ? 'pdf' : ext === '.ipynb' ? 'ipynb' : 'md'
+    const typeMap = { '.pdf': 'pdf', '.ipynb': 'ipynb', '.md': 'md', '.py': 'py' }
+    const type = typeMap[ext] ?? (['.png', '.jpg', '.jpeg', '.webp'].includes(ext) ? 'image' : 'md')
     res.status(200).json({
       path: `storage/${relativePath}`,
       label: path.basename(req.file.originalname),
@@ -149,14 +206,21 @@ app.post('/api/projects/:id/upload', upload.single('file'), (req, res) => {
   }
 })
 
-app.delete('/api/storage/file', (req, res) => {
+app.delete('/api/projects/:id/files', (req, res) => {
   try {
+    const projectId = req.params.id
     const filePath = req.query.path
+    const expectedPrefix = `storage/projects/${projectId}/`
     if (typeof filePath !== 'string' || !filePath.startsWith('storage/')) {
       res.status(400).json({ error: 'Nieprawidłowa ścieżka' })
       return
     }
-    const fullPath = path.join(rootDir, filePath)
+    const normalized = filePath.replace(/\\/g, '/')
+    if (!normalized.startsWith(expectedPrefix)) {
+      res.status(400).json({ error: 'Ścieżka musi należeć do tego projektu' })
+      return
+    }
+    const fullPath = path.join(rootDir, normalized)
     if (!fs.existsSync(fullPath)) {
       res.status(404).json({ error: 'Plik nie istnieje' })
       return
@@ -164,9 +228,18 @@ app.delete('/api/storage/file', (req, res) => {
     fs.unlinkSync(fullPath)
     res.status(200).json({ ok: true })
   } catch (err) {
-    console.error('[DELETE /api/storage/file]', err.message)
+    console.error('[DELETE /api/projects/:id/files]', err.message)
     res.status(500).json({ error: String(err.message) })
   }
+})
+
+app.use((err, _req, res, _next) => {
+  console.error('[API error]', err.code || err.message, err.message)
+  const status = err.code === 'LIMIT_FILE_SIZE' ? 400 : err.statusCode || 500
+  const message = err.code === 'LIMIT_FILE_SIZE'
+    ? 'Plik jest za duży (maks. 20 MB)'
+    : (err.message || 'Błąd serwera')
+  res.status(status).json({ error: message })
 })
 
 const PORT = Number(process.env.PORT) || 3001

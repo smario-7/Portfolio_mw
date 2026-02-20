@@ -9,6 +9,7 @@ interface ProjectsSectionProps {
   setSelectedCategory: (category: string) => void
   selectedProjectId: number | null
   setSelectedProjectId: (id: number | null) => void
+  onSelectProject: (id: number) => void
 }
 
 export function ProjectsSection({
@@ -16,12 +17,24 @@ export function ProjectsSection({
   setSelectedCategory,
   selectedProjectId,
   setSelectedProjectId,
+  onSelectProject,
 }: ProjectsSectionProps) {
-  const { content, projects, projectFilters } = usePortfolio()
+  const { content, projects } = usePortfolio()
+  const visibleProjects = projects.filter((p) => p.status === 'published')
+  const projectFilters =
+    visibleProjects.length === 0
+      ? []
+      : ['Wszystkie', ...[...new Set(visibleProjects.map((p) => p.category))].sort()]
   const filteredProjects =
     selectedCategory === 'Wszystkie'
-      ? projects
-      : projects.filter((p) => p.category === selectedCategory)
+      ? visibleProjects
+      : visibleProjects.filter((p) => p.category === selectedCategory)
+
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const orderA = a.order ?? a.id
+    const orderB = b.order ?? b.id
+    return orderA - orderB
+  })
 
   if (selectedProjectId) {
     return (
@@ -73,11 +86,11 @@ export function ProjectsSection({
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredProjects.map((project) => (
+        {sortedProjects.map((project) => (
           <ProjectCard
             key={project.id}
             project={project}
-            onSelect={(id) => setSelectedProjectId(id)}
+            onSelect={onSelectProject}
           />
         ))}
       </div>

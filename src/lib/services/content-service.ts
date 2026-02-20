@@ -1,25 +1,12 @@
 import type { ContentData } from '@/lib/types/content'
 import { getContent as getContentApi, saveContent as saveContentApi } from '@/lib/api/content-api'
-import { loadContent as loadContentStorage, saveContent as saveContentStorage } from '@/lib/data/store'
 
 export async function loadContent(): Promise<ContentData> {
-  try {
-    const data = await getContentApi()
-    saveContentStorage(data)
-    return data
-  } catch {
-    return loadContentStorage()
-  }
+  return getContentApi()
 }
 
 export async function saveContent(data: ContentData): Promise<void> {
-  try {
-    await saveContentApi(data)
-    saveContentStorage(data)
-  } catch {
-    saveContentStorage(data)
-    throw new Error('Zapis do pliku nie powiódł się, dane tylko w tej sesji')
-  }
+  await saveContentApi(data)
 }
 
 export function hasAboutContent(content: ContentData): boolean {

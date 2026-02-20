@@ -11,6 +11,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-blue-500 to-cyan-500',
+    order: 1,
   },
   {
     id: 2,
@@ -22,6 +23,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-purple-500 to-pink-500',
+    order: 2,
   },
   {
     id: 3,
@@ -33,6 +35,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-orange-500 to-red-500',
+    order: 3,
   },
   {
     id: 4,
@@ -44,6 +47,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-green-500 to-emerald-500',
+    order: 4,
   },
   {
     id: 5,
@@ -55,6 +59,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-indigo-500 to-blue-500',
+    order: 5,
   },
   {
     id: 6,
@@ -66,6 +71,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-yellow-500 to-orange-500',
+    order: 6,
   },
   {
     id: 7,
@@ -76,6 +82,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-teal-500 to-cyan-500',
+    order: 7,
   },
   {
     id: 8,
@@ -86,6 +93,7 @@ export const projects: Project[] = [
     github: 'https://github.com',
     demo: 'https://example.com',
     color: 'from-rose-500 to-pink-500',
+    order: 8,
   },
 ]
 

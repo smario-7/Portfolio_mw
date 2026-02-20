@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Loader2, Trash2, Paperclip, X } from 'lucide-react'
+import { ChevronLeft, Loader2, Trash2 } from 'lucide-react'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { useProjectForm } from '@/hooks/use-project-form'
-import { PROJECT_CATEGORIES } from '@/lib/constants/categories'
-import { uploadProjectFile } from '@/lib/api/storage-api'
-import type { ProjectCategory, ProjectAttachment } from '@/lib/types'
+import * as projectsService from '@/lib/services/projects-service'
+import { supabase } from '@/lib/supabase/client'
+import { uploadProjectFile, deleteProjectFile } from '@/lib/api/storage-api'
+import { getStorageBaseUrl } from '@/lib/utils/storage-url'
+import type { ProjectAttachment } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -19,20 +21,23 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  ProjectEditBasic,
+  ProjectEditStack,
+  ProjectEditLinks,
+  ProjectEditAttachments,
+  ProjectEditFullDescription,
+} from '@/components/admin/project-edit'
+import { AdminPageContainer } from '@/components/admin/admin-page-container'
+import { ADMIN_PAGE_CONTAINER_WIDE_CLASS } from '@/lib/constants/layout'
 import { toast } from 'sonner'
 
 export default function AdminProjectEditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { projects, updateProject, deleteProject } = usePortfolio()
+  const { projects, setProjects, updateProject, deleteProject } = usePortfolio()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [fetchingProject, setFetchingProject] = useState(false)
   const [existingAttachments, setExistingAttachments] = useState<ProjectAttachment[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -40,6 +45,24 @@ export default function AdminProjectEditPage() {
   const project = Number.isNaN(projectId)
     ? null
     : projects.find((p) => p.id === projectId)
+
+  useEffect(() => {
+    if (project != null || !supabase || Number.isNaN(projectId)) return
+    setFetchingProject(true)
+    projectsService
+      .getProjectById(projectId)
+      .then((fetched) => {
+        setProjects((prev) =>
+          prev.some((p) => p.id === projectId) ? prev : [...prev, fetched]
+        )
+      })
+      .catch(() => {
+        navigate('/admin/projects', { replace: true })
+      })
+      .finally(() => {
+        setFetchingProject(false)
+      })
+  }, [projectId, project, setProjects, navigate])
 
   const initialData = useMemo(() => {
     if (!project) return undefined
@@ -54,6 +77,8 @@ export default function AdminProjectEditPage() {
       demo: project.demo,
       image: project.image,
       color: project.color,
+      downloadLinks: project.downloadLinks,
+      status: project.status,
     }
   }, [project])
 
@@ -77,6 +102,15 @@ export default function AdminProjectEditPage() {
   }
 
   if (project == null) {
+    if (fetchingProject && supabase) {
+      return (
+        <AdminPageContainer>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </AdminPageContainer>
+      )
+    }
     navigate('/admin/projects', { replace: true })
     return null
   }
@@ -87,16 +121,31 @@ export default function AdminProjectEditPage() {
 
     form.setIsLoading(true)
     try {
-      updateProject(projectId, {
+      const imageValue =
+        form.formData.imagePath?.trim() || project.image || undefined
+      const dl = form.formData.downloadLinks ?? {}
+      const downloadLinks = {
+        ...(dl.pdf ? { pdf: dl.pdf } : {}),
+        ...(dl.ipynb ? { ipynb: dl.ipynb } : {}),
+        ...(dl.md ? { md: dl.md } : {}),
+        ...(dl.image ? { image: dl.image } : {}),
+      }
+      await updateProject(projectId, {
         title: form.formData.title.trim(),
         description: form.formData.shortDescription.trim(),
-        fullDescription: form.formData.description.trim() || undefined,
+        fullDescription:
+          form.formData.fullDescriptionBlocks.length > 0
+            ? form.formData.fullDescriptionBlocks
+            : undefined,
         category: form.formData.category,
         stack: form.formData.technologies,
         github: form.formData.githubUrl.trim(),
         demo: form.formData.demoUrl.trim(),
-        image: form.formData.image ? project.image : project.image,
+        image: imageValue,
         attachments: existingAttachments,
+        downloadLinks: Object.keys(downloadLinks).length > 0 ? downloadLinks : undefined,
+        color: form.formData.color?.trim() || undefined,
+        status: form.formData.status,
       })
       toast.success('Projekt zaktualizowany')
       navigate('/admin/projects')
@@ -133,18 +182,41 @@ export default function AdminProjectEditPage() {
     }
   }
 
-  const removeAttachment = (path: string) => {
-    setExistingAttachments((prev) => prev.filter((a) => a.path !== path))
+  const removeAttachment = async (path: string) => {
+    try {
+      await deleteProjectFile(projectId, path)
+      setExistingAttachments((prev) => prev.filter((a) => a.path !== path))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Nie udało się usunąć pliku')
+    }
   }
 
-  const apiBaseUrl =
-    typeof import.meta.env.VITE_API_URL === 'string'
-      ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-      : ''
-  const storageBase = apiBaseUrl ? new URL(apiBaseUrl).origin : ''
+  const onImageUpload = async (file: File): Promise<string> => {
+    const data = await uploadProjectFile(projectId, file)
+    return data.path
+  }
+
+  const onImageDelete = async (path: string): Promise<void> => {
+    await deleteProjectFile(projectId, path)
+  }
+
+  const storageBase = getStorageBaseUrl()
+
+  const existingImagePaths = useMemo(() => {
+    const paths: string[] = []
+    const current = form.formData.imagePath?.trim()
+    if (current && !paths.includes(current)) paths.push(current)
+    if (project?.image?.trim() && !paths.includes(project.image.trim())) paths.push(project.image.trim())
+    form.formData.fullDescriptionBlocks.forEach((b) => {
+      if (b.type === 'screenshot' && b.path?.trim() && !paths.includes(b.path.trim())) {
+        paths.push(b.path.trim())
+      }
+    })
+    return paths
+  }, [project?.image, form.formData.imagePath, form.formData.fullDescriptionBlocks])
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <AdminPageContainer className={ADMIN_PAGE_CONTAINER_WIDE_CLASS}>
       <div className="sticky top-0 z-10 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-sm border-b border-border mb-6">
         <div className="mb-4">
           <Link
@@ -190,214 +262,56 @@ export default function AdminProjectEditPage() {
 
       <ScrollArea className="h-[calc(100vh-14rem)]">
         <form id="project-edit-form" onSubmit={handleSave} className="space-y-8 pr-4">
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card/30 p-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Informacje podstawowe
-          </h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                Tytuł *
-              </label>
-              <input
-                type="text"
-                value={form.formData.title}
-                onChange={(e) =>
-                  form.setFormData({ ...form.formData, title: e.target.value })
-                }
-                className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                Kategoria *
-              </label>
-              <Select
-                value={form.formData.category}
-                onValueChange={(value) =>
-                  form.setFormData({
-                    ...form.formData,
-                    category: value as ProjectCategory,
-                  })
-                }
-              >
-                <SelectTrigger className="w-full rounded-lg h-10 px-4">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROJECT_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              Krótki opis *
-            </label>
-            <input
-              type="text"
-              value={form.formData.shortDescription}
-              onChange={(e) =>
-                form.setFormData({ ...form.formData, shortDescription: e.target.value })
-              }
-              className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-              required
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-foreground">
-              Pełny opis (opcjonalnie)
-            </label>
-            <textarea
-              value={form.formData.description}
-              onChange={(e) =>
-                form.setFormData({ ...form.formData, description: e.target.value })
-              }
-              rows={4}
-              className="w-full resize-none rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card/30 p-6">
-          <h2 className="text-xl font-semibold text-foreground">Stack</h2>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={form.techInput}
-              onChange={(e) => form.setTechInput(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === 'Enter' && (e.preventDefault(), form.handleAddTechnology())
-              }
-              placeholder="np. React, TypeScript"
-              className="flex-1 rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-            />
-            <Button type="button" variant="secondary" onClick={form.handleAddTechnology}>
-              Dodaj
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {form.formData.technologies.map((tech) => (
-              <span
-                key={tech}
-                className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
-              >
-                {tech}
-                <button
-                  type="button"
-                  onClick={() => form.handleRemoveTechnology(tech)}
-                  className="hover:opacity-70"
-                  aria-label={`Usuń ${tech}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card/30 p-6">
-          <h2 className="text-xl font-semibold text-foreground">Linki</h2>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                GitHub *
-              </label>
-              <input
-                type="url"
-                value={form.formData.githubUrl}
-                onChange={(e) =>
-                  form.setFormData({ ...form.formData, githubUrl: e.target.value })
-                }
-                className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
-                Demo *
-              </label>
-              <input
-                type="url"
-                value={form.formData.demoUrl}
-                onChange={(e) =>
-                  form.setFormData({ ...form.formData, demoUrl: e.target.value })
-                }
-                className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-6 rounded-lg border-2 border-border bg-card/30 p-6">
-          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-            <Paperclip className="h-5 w-5" />
-            Załączniki (PDF, .ipynb, .md)
-          </h2>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.ipynb,.md,application/pdf"
-            className="hidden"
-            onChange={onFileAttach}
+          <ProjectEditBasic
+            formData={form.formData}
+            setFormData={form.setFormData}
+            projectId={projectId}
+            existingImagePaths={existingImagePaths}
+            onImageUpload={onImageUpload}
+            onImageDelete={onImageDelete}
           />
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Wgrywanie...
-              </>
-            ) : (
-              'Wybierz plik'
-            )}
-          </Button>
-          <ul className="space-y-2">
-            {existingAttachments.map((a) => (
-              <li
-                key={a.path}
-                className="flex items-center justify-between rounded-lg border-2 border-border bg-background/50 px-4 py-2"
-              >
-                <a
-                  href={storageBase ? `${storageBase}/${a.path}` : a.path}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline truncate flex-1 min-w-0"
-                >
-                  {a.label}
-                </a>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(a.path)}
-                  className="ml-2 p-1 text-muted-foreground hover:text-destructive"
-                  aria-label="Usuń załącznik"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+          <ProjectEditStack
+            formData={form.formData}
+            techInput={form.techInput}
+            setTechInput={form.setTechInput}
+            onAddTechnology={form.handleAddTechnology}
+            onRemoveTechnology={form.handleRemoveTechnology}
+          />
+          <ProjectEditLinks
+            formData={form.formData}
+            setFormData={form.setFormData}
+            existingAttachments={existingAttachments}
+            existingImagePaths={existingImagePaths}
+          />
+          <ProjectEditAttachments
+            fileInputRef={fileInputRef}
+            uploading={uploading}
+            existingAttachments={existingAttachments}
+            storageBase={storageBase}
+            onFileAttach={onFileAttach}
+            removeAttachment={removeAttachment}
+          />
+          <ProjectEditFullDescription
+            projectId={projectId}
+            blocks={form.formData.fullDescriptionBlocks}
+            addBlock={form.addBlock}
+            removeBlock={form.removeBlock}
+            moveBlock={form.moveBlock}
+            updateBlock={form.updateBlock}
+            existingAttachments={existingAttachments}
+            existingImagePaths={existingImagePaths}
+            blockErrors={form.errors.fullDescriptionBlocks}
+          />
 
-        <div className="flex gap-4">
-          <Link
-            to="/admin/projects"
-            className="flex-1 rounded-lg border-2 border-border px-6 py-3 text-center font-medium text-foreground transition-colors hover:bg-card"
-          >
-            Anuluj
-          </Link>
-        </div>
-      </form>
+          <div className="flex gap-4">
+            <Link
+              to="/admin/projects"
+              className="flex-1 rounded-lg border-2 border-border px-6 py-3 text-center font-medium text-foreground transition-colors hover:bg-card"
+            >
+              Anuluj
+            </Link>
+          </div>
+        </form>
       </ScrollArea>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -420,6 +334,6 @@ export default function AdminProjectEditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AdminPageContainer>
   )
 }

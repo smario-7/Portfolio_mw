@@ -1,7 +1,74 @@
-import { LayoutDashboard, FileText, User, ImageIcon } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { LayoutDashboard, FileText, User, ImageIcon, Eye } from 'lucide-react'
 import { StatCard } from '@/components/admin/stat-card'
+import { VisitsModal } from '@/components/admin/dashboard'
+import { usePortfolio } from '@/contexts/PortfolioContext'
+import { countAllStorageFiles } from '@/lib/api/storage-api'
+import { getProjectsLastUpdatedAt } from '@/lib/api/projects-api'
+import { getContentLastUpdatedAt } from '@/lib/api/content-api'
+import { getPageViewCount, getRecentPageViews } from '@/lib/api/page-views-api'
+import { supabase } from '@/lib/supabase/client'
+import { formatRelativeDate } from '@/lib/utils/format-relative-date'
 
 export default function AdminDashboard() {
+  const { projects, loading } = usePortfolio()
+  const [fileCount, setFileCount] = useState<number | null>(null)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
+  const [viewCount, setViewCount] = useState<number | null>(null)
+  const [recentViews, setRecentViews] = useState<{ viewed_at: string }[]>([])
+  const [visitsModalOpen, setVisitsModalOpen] = useState(false)
+  const totalProjects = projects.length
+
+  const refreshVisits = useCallback(() => {
+    getPageViewCount('home').then(setViewCount).catch(() => setViewCount(null))
+    getRecentPageViews('home', 5).then(setRecentViews).catch(() => setRecentViews([]))
+  }, [])
+  const publishedCount = projects.filter((p) => p.status === 'published').length
+
+  useEffect(() => {
+    if (!supabase) {
+      setFileCount(0)
+      return
+    }
+    countAllStorageFiles()
+      .then(setFileCount)
+      .catch(() => setFileCount(0))
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    Promise.all([
+      getProjectsLastUpdatedAt(),
+      getContentLastUpdatedAt(),
+    ])
+      .then(([projectsDate, contentDate]) => {
+        const dates = [projectsDate, contentDate].filter(
+          (d): d is string => d != null && d !== ''
+        )
+        if (dates.length === 0) {
+          setLastUpdatedAt(null)
+          return
+        }
+        const latest = dates.sort((a, b) => b.localeCompare(a))[0]
+        setLastUpdatedAt(latest)
+      })
+      .catch(() => setLastUpdatedAt(null))
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    getPageViewCount('home')
+      .then(setViewCount)
+      .catch(() => setViewCount(null))
+  }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    getRecentPageViews('home', 5)
+      .then(setRecentViews)
+      .catch(() => setRecentViews([]))
+  }, [])
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -13,30 +80,65 @@ export default function AdminDashboard() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
+          label="Odwiedziny (strona główna)"
+          value={viewCount === null ? '—' : String(viewCount)}
+          icon={Eye}
+          color="bg-amber-500/10"
+          onClick={() => setVisitsModalOpen(true)}
+        />
+        <StatCard
           label="Liczba projektów"
-          value="12"
+          value={loading ? '—' : String(totalProjects)}
           icon={FileText}
           color="bg-blue-500/10"
         />
         <StatCard
-          label="Wyróżnione projekty"
-          value="5"
+          label="Ilość opublikowanych"
+          value={loading ? '—' : String(publishedCount)}
           icon={LayoutDashboard}
           color="bg-purple-500/10"
         />
         <StatCard
           label="Liczba plików"
-          value="48"
+          value={fileCount === null ? '—' : String(fileCount)}
           icon={ImageIcon}
           color="bg-pink-500/10"
         />
         <StatCard
           label="Ostatnia aktualizacja"
-          value="2 dni temu"
+          value={
+            lastUpdatedAt === null
+              ? '—'
+              : formatRelativeDate(lastUpdatedAt)
+          }
           icon={User}
           color="bg-green-500/10"
         />
       </div>
+
+      {recentViews.length > 0 && (
+        <div className="rounded-lg border-2 border-border bg-card/50 backdrop-blur-sm p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-3">
+            Ostatnie 5 odwiedzin (strona główna)
+          </h2>
+          <ul className="space-y-1.5 text-sm text-muted-foreground">
+            {recentViews.map((v, i) => (
+              <li key={i}>
+                {formatRelativeDate(v.viewed_at)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <VisitsModal
+        open={visitsModalOpen}
+        onOpenChange={(open) => {
+          setVisitsModalOpen(open)
+          if (!open) refreshVisits()
+        }}
+        onDataChange={refreshVisits}
+      />
     </div>
   )
 }

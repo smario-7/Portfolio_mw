@@ -23,7 +23,7 @@ export default function ContentEditingPage() {
   const form = useContentForm({ initialContent: savedContent })
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full">
       <div className="sticky top-0 z-10 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-sm border-b-2 border-border mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
