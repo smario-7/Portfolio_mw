@@ -25,6 +25,8 @@ import { toast } from 'sonner'
 interface PortfolioContextValue {
   content: ContentData
   setContent: (content: ContentData | ((prev: ContentData) => ContentData)) => void
+  /** Ustawia treść tylko w stanie (bez zapisu). Używane np. po zapisie z formularza admina, żeby zaktualizować widok bez ponownego zapisu. */
+  replaceContent: (content: ContentData) => void
   projects: Project[]
   projectFilters: string[]
   setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void
@@ -175,6 +177,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     []
   )
 
+  const replaceContent = useCallback((content: ContentData) => {
+    setContentState(content)
+  }, [])
+
   const setProjects = useCallback(
     (value: Project[] | ((prev: Project[]) => Project[])) => {
       setProjectsState((prev) => {
@@ -285,6 +291,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     () => ({
       content,
       setContent,
+      replaceContent,
       projects,
       projectFilters,
       setProjects,
@@ -298,6 +305,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     [
       content,
       setContent,
+      replaceContent,
       projects,
       projectFilters,
       setProjects,

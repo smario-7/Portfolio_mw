@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 
 export interface UseContentFormOptions {
   initialContent: ContentData
+  /** Wywoływane po udanym zapisie – pozwala zaktualizować kontekst (np. PortfolioContext), żeby reszta aplikacji widziała nowe dane. */
+  onSaved?: (content: ContentData) => void
 }
 
 export interface UseContentFormReturn {
@@ -27,7 +29,7 @@ export interface UseContentFormReturn {
 }
 
 export function useContentForm(options: UseContentFormOptions): UseContentFormReturn {
-  const { initialContent } = options
+  const { initialContent, onSaved } = options
 
   const [content, setContent] = useState<ContentData>(initialContent)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
@@ -66,13 +68,14 @@ export function useContentForm(options: UseContentFormOptions): UseContentFormRe
       setLastSaved(new Date())
       setHasChanges(false)
       setSaveStatus('saved')
+      onSaved?.(content)
       toast.success('Treść zapisana')
       setTimeout(() => setSaveStatus('idle'), 2000)
     } catch (_error) {
       setSaveStatus('idle')
       toast.error('Nie udało się zapisać')
     }
-  }, [content])
+  }, [content, onSaved])
 
   const handleAddSkill = useCallback(() => {
     if (skillInput.trim() && !content.home.skills.includes(skillInput.trim())) {

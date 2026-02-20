@@ -4,6 +4,7 @@ import {
   APP_DATA_CONTENT_KEY,
   contentValueToContentData,
 } from '@/lib/supabase/types'
+import { DEFAULT_CONTENT } from '@/lib/data/content-defaults'
 
 function getClient() {
   if (!supabase) {
@@ -14,6 +15,15 @@ function getClient() {
   return supabase
 }
 
+/** Uzupełnia brakujące sekcje (np. about) domyślną strukturą – np. gdy w bazie jest stary wpis bez sekcji "O mnie". */
+function mergeWithDefaults(raw: Partial<ContentData>): ContentData {
+  return {
+    home: { ...DEFAULT_CONTENT.home, ...(raw.home ?? {}) },
+    about: { ...DEFAULT_CONTENT.about, ...(raw.about ?? {}) },
+    contact: { ...DEFAULT_CONTENT.contact, ...(raw.contact ?? {}) },
+  }
+}
+
 export async function getContent(): Promise<ContentData> {
   const client = getClient()
   const { data, error } = await client
@@ -22,7 +32,8 @@ export async function getContent(): Promise<ContentData> {
     .eq('key', APP_DATA_CONTENT_KEY)
     .single()
   if (error) throw new Error(error.message)
-  return contentValueToContentData(data.value)
+  const raw = contentValueToContentData(data.value)
+  return mergeWithDefaults(raw)
 }
 
 export async function getContentUpdatedAt(): Promise<string | null> {

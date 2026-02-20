@@ -20,8 +20,11 @@ export default function ContentEditingPage() {
     return <Navigate to="/admin/content/home" replace />
   }
   const activeSection: Section = (section as Section) ?? 'home'
-  const { content: savedContent } = usePortfolio()
-  const form = useContentForm({ initialContent: savedContent })
+  const { content: savedContent, replaceContent } = usePortfolio()
+  const form = useContentForm({
+    initialContent: savedContent,
+    onSaved: replaceContent,
+  })
 
   return (
     <AdminPageContainer>

@@ -1,6 +1,8 @@
 # Struktura danych wyświetlanych na stronie
 
-Dokument opisuje, jakie dane są używane do wyświetlania treści w aplikacji portfolio. Aplikacja opiera się na trzech głównych źródłach: **treści strony** (teksty, przyciski, umiejętności), **listy projektów** oraz **katalogach pomocniczych** (narzędzia, ikony kontaktów). Poniżej każda z tych grup jest opisana wraz z polami i miejscem użycia w widokach.
+**Obowiązujący opis** danych i ich mapowania na widoki. Przy dodawaniu pól, zmianie typów lub powiązań komponentów należy trzymać się tej struktury i zaktualizować ten dokument.
+
+Aplikacja opiera się na trzech głównych źródłach: **treści strony** (teksty, przyciski, umiejętności), **listy projektów** oraz **katalogach pomocniczych** (narzędzia, ikony kontaktów). Poniżej każda z tych grup jest opisana wraz z polami i miejscem użycia w widokach.
 
 ---
 
@@ -33,7 +35,7 @@ Typ `ContentData` (plik `src/lib/types/content.ts`) grupuje całą edytowalną t
 | `projectsDescription` | string | Opis sekcji projektów. |
 | `skills` | string[] | Lista umiejętności wyświetlanych na stronie głównej (np. etykiety). |
 
-**Gdzie używane:** Pola sekcji Home są edytowane w panelu administracyjnym (zakładka treści – content-home-tab). Na stronie głównej część treści (np. hero) może być wciąż na stałe wpisana w komponencie `HomeSection`; docelowo warto podłączyć tam `content.home`, aby wszystko pochodziło z jednego źródła.
+**Gdzie używane:** Pola sekcji Home są edytowane w panelu administracyjnym (zakładka treści – content-home-tab). Na stronie głównej komponent `HomeSection` korzysta z `content.home` jako źródła treści.
 
 ### 2.2 Sekcja About (O mnie)
 
@@ -45,7 +47,7 @@ Typ `ContentData` (plik `src/lib/types/content.ts`) grupuje całą edytowalną t
 | `tiles` | AboutTile[] (opcjonalne) | Kafelki z ikoną, tytułem i opisem (np. „Doświadczenie”, „Edukacja”, „Zainteresowania”). |
 | `tools` | string[] (opcjonalne) | Lista identyfikatorów narzędzi odwołujących się do katalogu `TOOLS_CATALOG`; wyświetlane są tylko wybrane narzędzia. |
 
-**Gdzie używane:** W panelu admin wszystkie te pola są edytowane (content-about-tab). Na stronie publicznej komponent `AboutSection` wyświetla: `tiles` (kafelki z ikonami), `skills` (umiejętności wg kategorii) oraz narzędzia z katalogu wskazane przez `tools`. Pola `introduction` i `experience` są używane w panelu admin; na stronie „O mnie” część tekstu może być na razie na stałe w komponencie.
+**Gdzie używane:** W panelu admin wszystkie te pola są edytowane (content-about-tab). Na stronie publicznej komponent `AboutSection` wyświetla: `tiles` (kafelki z ikonami), `skills` (umiejętności wg kategorii) oraz narzędzia z katalogu wskazane przez `tools`. Pola `introduction` i `experience` są używane w panelu admin i na stronie „O mnie” z `content.about`.
 
 ### 2.3 Sekcja Contact (Kontakt)
 
@@ -144,7 +146,7 @@ Poniższa tabela wskazuje, która część danych jest używana w którym kompon
 
 | Dane | Gdzie używane |
 |------|----------------|
-| `content.home.*` | Panel admin: zakładka treści (content-home-tab). Strona główna: część pól może być jeszcze na stałe w HomeSection. |
+| `content.home.*` | Panel admin: zakładka treści (content-home-tab). Strona główna: HomeSection (źródło: content.home). |
 | `content.about.introduction`, `content.about.experience` | Panel admin: content-about-tab (edycja). |
 | `content.about.skills` | Panel admin: content-about-tab. Strona: AboutSection (umiejętności wg kategorii). |
 | `content.about.tiles` | Panel admin: content-about-tab. Strona: AboutSection (kafelki z ikonami). |
