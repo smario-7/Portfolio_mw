@@ -15,8 +15,7 @@ try {
       }
     })
   }
-} catch (err) {
-  console.warn('Supabase client initialization failed:', err)
+} catch (_err) {
   supabaseInstance = null
 }
 

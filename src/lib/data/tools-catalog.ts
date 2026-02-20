@@ -1,4 +1,4 @@
-import type { ToolItem } from '@/lib/types/content'
+import type { ToolItem } from '@/lib/types'
 
 export const TOOLS_CATALOG: ToolItem[] = [
   { id: 'git', name: 'Git', icon: 'GitBranch' },

@@ -1,5 +1,5 @@
 
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 
 interface ContentHomeTabProps {
   content: ContentData

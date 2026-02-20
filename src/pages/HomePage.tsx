@@ -3,19 +3,23 @@ import { Link } from 'react-router-dom'
 import { Code, Briefcase, User, Mail, LogIn, Power } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTabletScreenQuad } from '@/hooks/use-tablet-screen-quad'
-import { useProjectsZoom } from '@/hooks/use-projects-zoom'
-import { TabletScene } from '@/components/portfolio/tablet-scene'
-import { ProjectsZoomOverlay } from '@/components/portfolio/projects-zoom-overlay'
-import { ProjectsZoomTrigger } from '@/components/portfolio/projects-zoom-trigger'
-import { HomeSection } from '@/components/portfolio/home-section'
-import { ProjectsSection } from '@/components/portfolio/projects-section'
-import { AboutSection } from '@/components/portfolio/about-section'
-import { ContactSection } from '@/components/portfolio/contact-section'
-import { Copyright } from '@/components/portfolio/copyright'
+import {
+  useProjectsZoom,
+  useZoomLayout,
+  ProjectsZoomOverlay,
+  ProjectsZoomTrigger,
+} from '@/components/portfolio/projects-zoom'
+import { TabletScene } from '@/components/portfolio/TabletScene'
+import { HomeSection } from '@/components/portfolio/HomeSection'
+import { ProjectsSection } from '@/components/portfolio/ProjectsSection'
+import { AboutSection } from '@/components/portfolio/AboutSection'
+import { ContactSection } from '@/components/portfolio/ContactSection'
+import { Copyright } from '@/components/portfolio/Copyright'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { hasAboutContent, hasContactContent } from '@/lib/services/content-service'
 import { recordPageView } from '@/lib/api/page-views-api'
 import { TabletModalContainerContext } from '@/contexts/TabletModalContainerContext'
+import { cn } from '@/lib/utils'
 
 type TabId = 'home' | 'projects' | 'about' | 'contact'
 
@@ -35,6 +39,10 @@ export default function Home() {
   const projectsListScrollTopRef = useRef<number>(0)
 
   const { content, projects, loading, error } = usePortfolio()
+  const visibleProjects = useMemo(
+    () => projects.filter((p) => p.status === 'published'),
+    [projects]
+  )
   const hasProjects = projects.length > 0
   const hasAbout = hasAboutContent(content)
   const hasContact = hasContactContent(content)
@@ -70,9 +78,12 @@ export default function Home() {
     closeZoom,
     onZoomOpenComplete,
     onZoomCloseComplete,
+    onSidebarEnterComplete,
+    onSidebarCloseComplete,
     zoomTriggerRef,
   } = useProjectsZoom({ tabletContainerRef })
 
+  const { isMainSqueezed } = useZoomLayout()
   const isDataReady = !loading
   const isScreenReady = screenQuad !== null && screenSize !== null
   const isReady = isDataReady && isScreenReady
@@ -106,7 +117,7 @@ export default function Home() {
       try {
         sessionStorage.removeItem(key)
       } catch {
-        // ignore
+        // sessionStorage może być niedostępny (np. tryb prywatny)
       }
     })
   }, [])
@@ -192,7 +203,10 @@ export default function Home() {
             <ProjectsZoomOverlay
               visible={
                 projectsZoomOpen &&
-                (zoomPhase === 'open' || zoomPhase === 'closing') &&
+                (zoomPhase === 'open' ||
+                  zoomPhase === 'openWithSidebar' ||
+                  zoomPhase === 'closingSidebar' ||
+                  zoomPhase === 'closing') &&
                 activeTab === 'projects'
               }
               onClose={closeZoom}
@@ -215,6 +229,13 @@ export default function Home() {
           zoomPhase={zoomPhase}
           onZoomOpenComplete={onZoomOpenComplete}
           onZoomCloseComplete={onZoomCloseComplete}
+          onSidebarEnterComplete={onSidebarEnterComplete}
+          onSidebarCloseComplete={onSidebarCloseComplete}
+          zoomSidebarProjects={visibleProjects}
+          zoomSidebarSelectedCategory={selectedCategory}
+          zoomSidebarSetSelectedCategory={setSelectedCategory}
+          zoomSidebarSelectedProjectId={selectedProjectId}
+          zoomSidebarOnSelectProject={handleSelectProject}
         >
         {!isReady ? (
           <div className="tablet-content flex min-h-[50vh] items-center justify-center">
@@ -263,7 +284,14 @@ export default function Home() {
               </div>
               <div className="tablet-content">
                 <div key={activeTab} className="tablet-tab-content">
-                  <main className="container mx-auto px-8 py-24 md:px-16 lg:px-24">
+                  <main
+                    className={cn(
+                      'container mx-auto py-24',
+                      isMainSqueezed
+                        ? 'px-4 md:px-8 lg:px-10'
+                        : 'px-8 md:px-16 lg:px-24'
+                    )}
+                  >
                     <div className="mx-auto max-w-5xl space-y-12">
                       {activeTab === 'home' && (
                         <HomeSection onSeeProjects={() => setActiveTab('projects')} />

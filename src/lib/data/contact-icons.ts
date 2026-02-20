@@ -1,4 +1,4 @@
-import type { ContactLinkType } from '@/lib/types/content'
+import type { ContactLinkType } from '@/lib/types'
 
 export const CONTACT_ICONS: Record<ContactLinkType, string> = {
   linkedin: 'Linkedin',

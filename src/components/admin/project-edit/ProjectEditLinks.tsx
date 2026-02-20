@@ -1,6 +1,6 @@
 import type { ProjectAttachment } from '@/lib/types'
 import type { ProjectFormData } from '@/lib/validation/project-validation'
-import { AdminSectionCard } from '@/components/admin/admin-section-card'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 
 const EMPTY = ''
 

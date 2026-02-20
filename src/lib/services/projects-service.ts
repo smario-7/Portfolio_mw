@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/projects-api'
 import { supabase } from '@/lib/supabase/client'
 import { TOOLS_CATALOG } from '@/lib/data/tools-catalog'
-import type { ToolItem } from '@/lib/types/content'
+import type { ToolItem } from '@/lib/types'
 import { normalizeProject, type RawProject } from '@/lib/data/project-normalize'
 
 function normalizeProjects(list: RawProject[]): Project[] {

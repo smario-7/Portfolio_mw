@@ -1,10 +1,5 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { AppModal } from '@/components/shared'
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { PROJECT_CARD_COLORS } from '@/lib/constants/project-colors'
 import { cn } from '@/lib/utils'
@@ -30,9 +25,8 @@ export function ColorPickerModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm" showCloseButton>
-        <DialogHeader>
+    <AppModal open={open} onOpenChange={onOpenChange} contentClassName="sm:max-w-sm">
+      <DialogHeader>
           <DialogTitle>Wybierz kolor karty</DialogTitle>
           <DialogDescription>Wybierz kolor karty projektu na liście projektów.</DialogDescription>
         </DialogHeader>
@@ -73,7 +67,6 @@ export function ColorPickerModal({
             ))}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </AppModal>
   )
 }

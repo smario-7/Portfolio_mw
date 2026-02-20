@@ -1,7 +1,7 @@
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkBreaks from 'remark-breaks'
-import { markdownComponents } from './markdown-components'
+import { markdownComponents } from './MarkdownComponents'
 import { cn } from '@/lib/utils'
 
 interface MarkdownContentProps {

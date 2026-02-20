@@ -1,4 +1,4 @@
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import { apiRequest } from '@/lib/api/client'
 import { supabase } from '@/lib/supabase/client'
 import * as contentRepository from '@/lib/supabase/repositories/content.repository'

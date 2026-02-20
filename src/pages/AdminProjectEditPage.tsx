@@ -27,7 +27,7 @@ import {
   ProjectEditAttachments,
   ProjectEditFullDescription,
 } from '@/components/admin/project-edit'
-import { AdminPageContainer } from '@/components/admin/admin-page-container'
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
 import { ADMIN_PAGE_CONTAINER_WIDE_CLASS } from '@/lib/constants/layout'
 import { toast } from 'sonner'
 
@@ -217,50 +217,51 @@ export default function AdminProjectEditPage() {
 
   return (
     <AdminPageContainer className={ADMIN_PAGE_CONTAINER_WIDE_CLASS}>
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-sm border-b border-border mb-6">
-        <div className="mb-4">
-          <Link
-            to="/admin/projects"
-            className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ChevronLeft className="h-5 w-5" />
-            Wróć
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">
-              Edycja projektu
-            </h1>
-            <p className="text-muted-foreground">
-              {project?.title ?? 'Ładowanie…'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => setShowDeleteDialog(true)}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="shrink-0 border-b border-border bg-background/95 px-4 py-4 backdrop-blur-sm">
+          <div className="mb-4">
+            <Link
+              to="/admin/projects"
+              className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Usuń projekt
-            </Button>
-            <Button type="submit" form="project-edit-form" disabled={form.isLoading}>
-              {form.isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Zapisywanie...
-                </>
-              ) : (
-                'Zapisz zmiany'
-              )}
-            </Button>
+              <ChevronLeft className="h-5 w-5" />
+              Wróć
+            </Link>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground">
+                Edycja projektu
+              </h1>
+              <p className="text-muted-foreground">
+                {project?.title ?? 'Ładowanie…'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Usuń projekt
+              </Button>
+              <Button type="submit" form="project-edit-form" disabled={form.isLoading}>
+                {form.isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Zapisywanie...
+                  </>
+                ) : (
+                  'Zapisz zmiany'
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <ScrollArea className="h-[calc(100vh-14rem)]">
+        <ScrollArea className="min-h-0 flex-1 overflow-hidden">
         <form id="project-edit-form" onSubmit={handleSave} className="space-y-8 pr-4">
           <ProjectEditBasic
             formData={form.formData}
@@ -312,7 +313,8 @@ export default function AdminProjectEditPage() {
             </Link>
           </div>
         </form>
-      </ScrollArea>
+        </ScrollArea>
+      </div>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

@@ -3,9 +3,10 @@ import { Check, Loader2, Save } from 'lucide-react'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { useContentForm } from '@/hooks/use-content-form'
 import { VALID_SECTIONS, type Section } from '@/lib/constants/sections'
-import { ContentHomeTab } from '@/components/admin/content/content-home-tab'
-import { ContentAboutTab } from '@/components/admin/content/content-about-tab'
-import { ContentContactTab } from '@/components/admin/content/content-contact-tab'
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
+import { ContentHomeTab } from '@/components/admin/content/ContentHomeTab'
+import { ContentAboutTab } from '@/components/admin/content/ContentAboutTab'
+import { ContentContactTab } from '@/components/admin/content/ContentContactTab'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
@@ -23,9 +24,9 @@ export default function ContentEditingPage() {
   const form = useContentForm({ initialContent: savedContent })
 
   return (
-    <div className="w-full">
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-sm border-b-2 border-border mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <AdminPageContainer>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-hidden">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-foreground">
               Edycja treści strony
@@ -64,10 +65,9 @@ export default function ContentEditingPage() {
             )}
           </div>
         </div>
-      </div>
 
-      <ScrollArea className="h-[calc(100vh-14rem)]">
-        <div className="space-y-6 pr-4">
+        <ScrollArea className="min-h-0 flex-1 overflow-hidden">
+          <div className="space-y-6 pr-4">
           {activeSection === 'home' && (
             <ContentHomeTab
               content={form.content}
@@ -95,8 +95,9 @@ export default function ContentEditingPage() {
               setHasChanges={() => {}}
             />
           )}
-        </div>
-      </ScrollArea>
-    </div>
+          </div>
+        </ScrollArea>
+      </div>
+    </AdminPageContainer>
   )
 }

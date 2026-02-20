@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import { validateContentData, type ContentFormErrors } from '@/lib/validation/content-validation'
 import { saveContent as saveContentService } from '@/lib/services/content-service'
 import { toast } from 'sonner'
@@ -68,7 +68,7 @@ export function useContentForm(options: UseContentFormOptions): UseContentFormRe
       setSaveStatus('saved')
       toast.success('Treść zapisana')
       setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch (error) {
+    } catch (_error) {
       setSaveStatus('idle')
       toast.error('Nie udało się zapisać')
     }

@@ -1,4 +1,4 @@
-import type { AdminSettings, AdminSettingsInsert } from '@/lib/types/admin-settings'
+import type { AdminSettings, AdminSettingsInsert } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
 import * as adminSettingsRepository from '@/lib/supabase/repositories/admin-settings.repository'
 

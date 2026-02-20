@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
-import type { AdminSettings, AdminSettingsInsert } from '@/lib/types/admin-settings'
+import type { AdminSettings, AdminSettingsInsert } from '@/lib/types'
 
 function getClient() {
   if (!supabase) {

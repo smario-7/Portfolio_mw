@@ -3,6 +3,11 @@ const API_BASE =
     ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
     : ''
 
+/**
+ * Wysyła żądanie do API (VITE_API_URL). Dla JSON ustawia Content-Type;
+ * dla FormData nie nadpisuje nagłówków. Zwraca zparsowaną odpowiedź JSON
+ * lub tekst w zależności od content-type.
+ */
 export async function apiRequest<T>(
   endpoint: string,
   options?: RequestInit
@@ -25,21 +30,17 @@ export async function apiRequest<T>(
     },
   }
 
-  try {
-    const response = await fetch(url, config)
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}))
-      throw new Error((error as { error?: string })?.error || `HTTP error! status: ${response.status}`)
-    }
+  const response = await fetch(url, config)
 
-    const contentType = response.headers.get('content-type')
-    if (contentType && contentType.includes('application/json')) {
-      return await response.json()
-    }
-    
-    return (await response.text()) as T
-  } catch (error) {
-    throw error
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}))
+    throw new Error((error as { error?: string })?.error || `HTTP error! status: ${response.status}`)
   }
+
+  const contentType = response.headers.get('content-type')
+  if (contentType && contentType.includes('application/json')) {
+    return await response.json()
+  }
+
+  return (await response.text()) as T
 }

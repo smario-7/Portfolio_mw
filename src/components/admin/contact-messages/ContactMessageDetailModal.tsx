@@ -1,12 +1,7 @@
 import { format, parseISO } from 'date-fns'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import type { ContactMessage } from '@/lib/types/contact-message'
+import { AppModal } from '@/components/shared'
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import type { ContactMessage } from '@/lib/types'
 
 interface ContactMessageDetailModalProps {
   open: boolean
@@ -29,13 +24,13 @@ export function ContactMessageDetailModal({
   message,
 }: ContactMessageDetailModalProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-lg"
-        showCloseButton
-        aria-describedby="contact-message-detail-desc"
-      >
-        {message != null && (
+    <AppModal
+      open={open}
+      onOpenChange={onOpenChange}
+      contentClassName="max-w-lg"
+      aria-describedby="contact-message-detail-desc"
+    >
+      {message != null && (
           <>
             <DialogHeader>
               <DialogTitle>Wiadomość od {message.name}</DialogTitle>
@@ -70,7 +65,6 @@ export function ContactMessageDetailModal({
             </div>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+    </AppModal>
   )
 }

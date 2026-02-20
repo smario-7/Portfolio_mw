@@ -1,4 +1,4 @@
-import type { ContactMessage } from '@/lib/types/contact-message'
+import type { ContactMessage } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
 import * as contactMessageRepository from '@/lib/supabase/repositories/contact-message.repository'
 

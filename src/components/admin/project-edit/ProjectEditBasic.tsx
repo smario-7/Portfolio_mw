@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { AdminSectionCard } from '@/components/admin/admin-section-card'
-import { ColorPickerModal } from '@/components/admin/color-picker-modal'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
+import { ColorPickerModal } from '@/components/admin/ColorPickerModal'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 

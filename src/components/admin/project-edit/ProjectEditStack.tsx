@@ -1,6 +1,6 @@
 import type { ProjectFormData } from '@/lib/validation/project-validation'
 import { Button } from '@/components/ui/button'
-import { AdminSectionCard } from '@/components/admin/admin-section-card'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 
 interface ProjectEditStackProps {
   formData: ProjectFormData

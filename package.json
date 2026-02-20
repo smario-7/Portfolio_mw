@@ -72,16 +72,19 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.1.9",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.5.2",
     "dotenv-cli": "^11.0.0",
+    "eslint": "^10.0.1",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "~5.7",
+    "typescript-eslint": "^8.56.0",
     "vite": "^6.3.5"
   }
 }

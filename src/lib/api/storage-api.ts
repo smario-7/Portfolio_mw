@@ -121,7 +121,7 @@ export async function deleteProjectFile(
   path: string
 ): Promise<void> {
   if (supabase) {
-    let normalized = path.replace(/^storage\//, '')
+    const normalized = path.replace(/^storage\//, '')
     const expectedPrefix = getProjectStorageBasePath(projectId) + '/'
     if (!normalized.startsWith(expectedPrefix)) {
       throw new Error('Nieprawidłowa ścieżka')

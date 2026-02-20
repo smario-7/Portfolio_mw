@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { AdminSectionCard } from '@/components/admin/admin-section-card'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 import { ContactMessageDetailModal } from '@/components/admin/contact-messages/ContactMessageDetailModal'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,7 +22,7 @@ import {
   deleteContactMessage,
   deleteContactMessages,
 } from '@/lib/api/contact-messages-api'
-import type { ContactMessage } from '@/lib/types/contact-message'
+import type { ContactMessage } from '@/lib/types'
 
 function formatDateTime(value: string | null): string {
   if (value == null) return '—'

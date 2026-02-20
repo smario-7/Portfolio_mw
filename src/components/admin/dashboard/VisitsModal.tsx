@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { AppModal } from '@/components/shared'
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { LineChart as LineIcon, BarChart2, ScatterChart } from 'lucide-react'
@@ -41,13 +36,13 @@ export function VisitsModal({ open, onOpenChange, onDataChange }: VisitsModalPro
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="!max-w-none w-[75vw] aspect-video max-h-[90vh] flex flex-col gap-4 overflow-hidden p-6"
-        showCloseButton
-        aria-describedby="visits-modal-desc"
-      >
-        <DialogHeader>
+    <AppModal
+      open={open}
+      onOpenChange={onOpenChange}
+      contentClassName="!max-w-none w-[75vw] aspect-video max-h-[90vh] flex flex-col gap-4 overflow-hidden p-6"
+      aria-describedby="visits-modal-desc"
+    >
+      <DialogHeader>
           <DialogTitle>Odwiedziny — strona główna</DialogTitle>
           <DialogDescription id="visits-modal-desc">
             Wykres i statystyki odwiedzin strony głównej.
@@ -90,13 +85,12 @@ export function VisitsModal({ open, onOpenChange, onDataChange }: VisitsModalPro
             Zamknij
           </Button>
         </div>
-      </DialogContent>
 
       <VisitsResetModal
         open={resetModalOpen}
         onOpenChange={setResetModalOpen}
         onDeleted={handleDeleted}
       />
-    </Dialog>
+    </AppModal>
   )
 }

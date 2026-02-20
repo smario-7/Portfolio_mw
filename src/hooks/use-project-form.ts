@@ -127,7 +127,7 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
       setTimeout(() => {
         setAutoSaveStatus('idle')
       }, 2000)
-    } catch (error) {
+    } catch (_error) {
       setAutoSaveStatus('idle')
     }
   }, [hasChanges, formData])

@@ -1,4 +1,4 @@
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import type { Section } from '@/lib/constants/sections'
 
 export interface ContentFormErrors {

@@ -43,9 +43,6 @@ export function checkProfanity(text: string): { hasProfanity: boolean; words: st
 
   const profanityList = loadProfanityList()
   if (profanityList.length === 0) {
-    if (import.meta.env.DEV) {
-      console.warn('Lista niecenzuralnych słów jest pusta')
-    }
     return { hasProfanity: false, words: [] }
   }
 
@@ -67,10 +64,6 @@ export function checkProfanity(text: string): { hasProfanity: boolean; words: st
         detectedWords.push(word)
       }
     }
-  }
-
-  if (import.meta.env.DEV && detectedWords.length > 0) {
-    console.log('Wykryto niecenzuralne słowa:', detectedWords, 'w tekście:', text)
   }
 
   return {
@@ -119,10 +112,6 @@ export function findProfanityInFields(fields: {
         words: check.words,
       })
     }
-  }
-
-  if (import.meta.env.DEV && results.length > 0) {
-    console.log('Znaleziono niecenzuralne słowa w polach:', results)
   }
 
   return results

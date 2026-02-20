@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import { getToolsCatalog } from '@/lib/services/projects-service'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -28,7 +28,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
-import type { Course } from '@/lib/types/content'
+import type { Course } from '@/lib/types'
 
 interface ContentAboutTabProps {
   content: ContentData

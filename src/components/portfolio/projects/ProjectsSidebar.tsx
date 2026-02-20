@@ -69,7 +69,7 @@ export function ProjectsSidebar({
 
   return (
     <aside
-      className={`box-border relative flex h-full min-h-0 w-72 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-background/95 ${zoomClosing ? 'pointer-events-none' : ''}`}
+      className={`box-border relative flex h-full min-h-0 w-full min-w-0 flex-shrink-0 flex-col overflow-hidden border-r border-border bg-background/95 ${zoomClosing ? 'pointer-events-none' : ''}`}
     >
       <div ref={headerRef} className="flex flex-shrink-0 flex-col">
         {onBackToList && (
@@ -89,7 +89,7 @@ export function ProjectsSidebar({
         )}
         <div className="flex-shrink-0 border-b border-border p-3">
           <Select value={selectedCategory} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-full" size="default">
+            <SelectTrigger className="w-full min-w-0" size="default">
               <SelectValue placeholder="Kategoria" />
             </SelectTrigger>
             <SelectContent>
@@ -103,7 +103,7 @@ export function ProjectsSidebar({
         </div>
       </div>
       <div
-        className="absolute left-0 right-0 min-h-0 space-y-1 overflow-y-auto p-3"
+        className="scrollbar-tablet absolute left-0 right-0 min-h-0 space-y-1 overflow-y-auto p-3"
         style={{ top: headerHeight, bottom: 0 }}
       >
         {sortedProjects.map((project) => (

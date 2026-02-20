@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import type { Project } from '@/lib/types'
 import { DEFAULT_CONTENT } from '@/lib/data/content-defaults'
 import { projects as defaultProjects } from '@/lib/data/projects'
@@ -133,15 +133,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
         timeoutId = setTimeout(() => {
           if (!cancelled) {
-            console.warn('Data loading timeout after', LOAD_TIMEOUT_MS, 'ms')
             setContentState(migrateContentCourses(DEFAULT_CONTENT))
             setProjectsState(migrateProjectsOrder(defaultProjects))
             setError('Timeout podczas ładowania danych')
             finishLoading()
           }
         }, LOAD_TIMEOUT_MS)
-      } catch (err) {
-        console.error('Unexpected error in loadData:', err)
+      } catch (_err) {
         if (!cancelled) {
           setContentState(migrateContentCourses(DEFAULT_CONTENT))
           setProjectsState(migrateProjectsOrder(defaultProjects))

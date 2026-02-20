@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import type { ProjectAttachment } from '@/lib/types'
 import { Button } from '@/components/ui/button'
-import { AdminSectionCard } from '@/components/admin/admin-section-card'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 import {
   AlertDialog,
   AlertDialogAction,

@@ -12,7 +12,13 @@ export interface ScreenQuad {
   p4: Point
 }
 
-export type ZoomPhase = 'idle' | 'opening' | 'open' | 'closing'
+export type ZoomPhase =
+  | 'idle'
+  | 'opening'
+  | 'open'
+  | 'openWithSidebar'
+  | 'closingSidebar'
+  | 'closing'
 
 export type {
   ProjectCategory,
@@ -26,3 +32,24 @@ export type {
   BlockScreenshot,
   BlockCode,
 } from './types/project'
+
+export type {
+  ContactMessage,
+  ContactMessageInsert,
+  ContactMessageUpdate,
+} from './types/contact-message'
+
+export type {
+  AdminSettings,
+  AdminSettingsInsert,
+  AdminSettingsUpdate,
+} from './types/admin-settings'
+
+export type {
+  ContactLinkType,
+  ContactLink,
+  AboutTile,
+  ToolItem,
+  Course,
+  ContentData,
+} from './types/content'

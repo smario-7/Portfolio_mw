@@ -51,10 +51,6 @@ export function validateContactForm(
     message: trimmedMessage,
   })
 
-  if (import.meta.env.DEV) {
-    console.log('Walidacja profanity - wyniki:', profanityResults, 'dla pól:', { name: trimmedName, email: trimmedEmail, message: trimmedMessage })
-  }
-
   if (profanityResults.length > 0) {
     errors.profanity = 'Wykryto niecenzuralne słowa w formularzu. Prosimy o usunięcie ich przed wysłaniem.'
     errors.profanityFields = profanityResults

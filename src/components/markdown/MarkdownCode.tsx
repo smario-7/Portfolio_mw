@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from 'react'
-import { CodeBlock } from '@/components/code-block'
+import { CodeBlock } from '@/components/shared'
 import { extractLanguage } from './markdown-code-utils'
 
 interface MarkdownCodeProps extends HTMLAttributes<HTMLElement> {

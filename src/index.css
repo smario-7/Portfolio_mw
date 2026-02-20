@@ -259,33 +259,24 @@
     transition: transform 0.35s ease-out, opacity 0.25s, filter 0.35s ease-out;
   }
 
-  .tablet-screen-reflection {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 3;
-    border-radius: inherit;
-    transition: opacity 0.35s ease-out;
-    background-image:
-      linear-gradient(165deg, rgba(255, 255, 255, 0.12) 0%, transparent 35%),
-      linear-gradient(45deg, transparent 50%, rgba(200, 220, 255, 0.09) 70%, transparent 90%),
-      radial-gradient(ellipse 80% 40% at 70% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
-  }
-
-  .tablet-container::-webkit-scrollbar {
+  .tablet-container::-webkit-scrollbar,
+  .scrollbar-tablet::-webkit-scrollbar {
     width: 8px;
   }
 
-  .tablet-container::-webkit-scrollbar-track {
+  .tablet-container::-webkit-scrollbar-track,
+  .scrollbar-tablet::-webkit-scrollbar-track {
     background: transparent;
   }
 
-  .tablet-container::-webkit-scrollbar-thumb {
+  .tablet-container::-webkit-scrollbar-thumb,
+  .scrollbar-tablet::-webkit-scrollbar-thumb {
     background: rgba(100, 200, 255, 0.3);
     border-radius: 4px;
   }
 
-  .tablet-container::-webkit-scrollbar-thumb:hover {
+  .tablet-container::-webkit-scrollbar-thumb:hover,
+  .scrollbar-tablet::-webkit-scrollbar-thumb:hover {
     background: rgba(100, 200, 255, 0.5);
   }
 

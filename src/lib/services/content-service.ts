@@ -1,4 +1,4 @@
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import { getContent as getContentApi, saveContent as saveContentApi } from '@/lib/api/content-api'
 
 export async function loadContent(): Promise<ContentData> {

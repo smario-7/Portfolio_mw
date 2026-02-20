@@ -1,12 +1,10 @@
 import { usePortfolio } from '@/contexts/PortfolioContext'
-import {
-  ProjectDetailHeader,
-  ProjectDetailLead,
-  ProjectDetailStack,
-  ProjectDetailLinks,
-  ProjectDetailAttachments,
-  ProjectDetailFullDescription,
-} from './project-detail/index'
+import { ProjectDetailHeader } from './ProjectDetailHeader'
+import { ProjectDetailLead } from './ProjectDetailLead'
+import { ProjectDetailStack } from './ProjectDetailStack'
+import { ProjectDetailLinks } from './ProjectDetailLinks'
+import { ProjectDetailAttachments } from './ProjectDetailAttachments'
+import { ProjectDetailFullDescription } from './ProjectDetailFullDescription'
 
 interface ProjectDetailProps {
   projectId: number

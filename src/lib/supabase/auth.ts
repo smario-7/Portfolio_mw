@@ -54,8 +54,8 @@ export function updateSessionActivity(): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(SESSION_ACTIVITY_KEY, Date.now().toString())
-  } catch (err) {
-    console.warn('Failed to update session activity:', err)
+  } catch (_err) {
+    // localStorage niedostępny (prywatny tryb, quota)
   }
 }
 
@@ -64,8 +64,7 @@ export function getSessionActivityTime(): number | null {
   try {
     const activityTime = localStorage.getItem(SESSION_ACTIVITY_KEY)
     return activityTime ? parseInt(activityTime, 10) : null
-  } catch (err) {
-    console.warn('Failed to get session activity:', err)
+  } catch (_err) {
     return null
   }
 }
@@ -74,8 +73,8 @@ export function clearSessionActivity(): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem(SESSION_ACTIVITY_KEY)
-  } catch (err) {
-    console.warn('Failed to clear session activity:', err)
+  } catch (_err) {
+    // localStorage niedostępny
   }
 }
 

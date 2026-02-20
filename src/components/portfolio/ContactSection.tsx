@@ -8,10 +8,10 @@ import {
 } from 'lucide-react'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { CONTACT_ICONS } from '@/lib/data/contact-icons'
-import type { ContactLinkType } from '@/lib/types/content'
+import type { ContactLinkType } from '@/lib/types'
 import { useContactForm } from '@/hooks/use-contact-form'
-import { ContactRateLimitModal } from '@/components/portfolio/contact-rate-limit-modal'
-import { ProfanityWarningModal } from '@/components/portfolio/profanity-warning-modal'
+import { ContactRateLimitModal } from '@/components/portfolio/ContactRateLimitModal'
+import { ProfanityWarningModal } from '@/components/portfolio/ProfanityWarningModal'
 import { Textarea } from '@/components/ui/textarea'
 import { CONTACT_FORM_LIMITS } from '@/lib/constants/contact-form-limits'
 

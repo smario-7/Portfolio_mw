@@ -1,11 +1,6 @@
 import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { AppModal } from '@/components/shared'
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ArrowLeft } from 'lucide-react'
@@ -36,9 +31,13 @@ export function VisitsResetModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg" showCloseButton aria-describedby="reset-visits-desc">
-        <DialogHeader>
+    <AppModal
+      open={open}
+      onOpenChange={handleOpenChange}
+      contentClassName="max-w-lg"
+      aria-describedby="reset-visits-desc"
+    >
+      <DialogHeader>
           <DialogTitle>Resetuj liczbę odwiedzin</DialogTitle>
           <DialogDescription id="reset-visits-desc">
             Wybierz stronę i zaznacz wpisy do usunięcia.
@@ -85,7 +84,6 @@ export function VisitsResetModal({
             />
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+    </AppModal>
   )
 }

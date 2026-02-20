@@ -1,3 +1,4 @@
+export { ProjectDetail } from './ProjectDetail'
 export { ProjectDetailHeader } from './ProjectDetailHeader'
 export { ProjectDetailLead } from './ProjectDetailLead'
 export { ProjectDetailStack } from './ProjectDetailStack'

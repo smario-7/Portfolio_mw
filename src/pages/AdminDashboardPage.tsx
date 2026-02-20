@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { LayoutDashboard, FileText, User, ImageIcon, Eye } from 'lucide-react'
-import { StatCard } from '@/components/admin/stat-card'
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
+import { StatCard } from '@/components/admin/StatCard'
 import { VisitsModal } from '@/components/admin/dashboard'
 import { usePortfolio } from '@/contexts/PortfolioContext'
 import { countAllStorageFiles } from '@/lib/api/storage-api'
@@ -70,15 +72,16 @@ export default function AdminDashboard() {
   }, [])
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Zarządzaj swoim portfolio</p>
+    <AdminPageContainer>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto">
+        <div className="shrink-0 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Zarządzaj swoim portfolio</p>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid shrink-0 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Odwiedziny (strona główna)"
           value={viewCount === null ? '—' : String(viewCount)}
@@ -116,29 +119,27 @@ export default function AdminDashboard() {
         />
       </div>
 
-      {recentViews.length > 0 && (
-        <div className="rounded-lg border-2 border-border bg-card/50 backdrop-blur-sm p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-3">
-            Ostatnie 5 odwiedzin (strona główna)
-          </h2>
-          <ul className="space-y-1.5 text-sm text-muted-foreground">
-            {recentViews.map((v, i) => (
-              <li key={i}>
-                {formatRelativeDate(v.viewed_at)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {recentViews.length > 0 && (
+          <AdminSectionCard title="Ostatnie 5 odwiedzin (strona główna)">
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              {recentViews.map((v, i) => (
+                <li key={i}>
+                  {formatRelativeDate(v.viewed_at)}
+                </li>
+              ))}
+            </ul>
+          </AdminSectionCard>
+        )}
 
-      <VisitsModal
-        open={visitsModalOpen}
-        onOpenChange={(open) => {
-          setVisitsModalOpen(open)
-          if (!open) refreshVisits()
-        }}
-        onDataChange={refreshVisits}
-      />
-    </div>
+        <VisitsModal
+          open={visitsModalOpen}
+          onOpenChange={(open) => {
+            setVisitsModalOpen(open)
+            if (!open) refreshVisits()
+          }}
+          onDataChange={refreshVisits}
+        />
+      </div>
+    </AdminPageContainer>
   )
 }

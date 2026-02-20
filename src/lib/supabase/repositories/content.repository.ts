@@ -1,4 +1,4 @@
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
 import {
   APP_DATA_CONTENT_KEY,

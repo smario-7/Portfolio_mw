@@ -37,13 +37,20 @@ export function useProjectsZoom(options: UseProjectsZoomOptions) {
 
   const closeZoom = useCallback(() => {
     scrollToRestoreRef.current = tabletContainerRef.current?.scrollTop ?? 0
-    setZoomPhase('closing')
+    setZoomPhase((prev) =>
+      prev === 'openWithSidebar' ? 'closingSidebar' : prev === 'open' ? 'closing' : prev
+    )
   }, [tabletContainerRef])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
-      if (zoomPhase !== 'open' && zoomPhase !== 'closing') return
+      const canCloseZoom =
+        zoomPhase === 'open' ||
+        zoomPhase === 'openWithSidebar' ||
+        zoomPhase === 'closingSidebar' ||
+        zoomPhase === 'closing'
+      if (!canCloseZoom) return
       e.preventDefault()
       closeZoom()
     }
@@ -60,6 +67,14 @@ export function useProjectsZoom(options: UseProjectsZoomOptions) {
     setZoomPhase('idle')
   }
 
+  const onSidebarEnterComplete = () => {
+    setZoomPhase('openWithSidebar')
+  }
+
+  const onSidebarCloseComplete = () => {
+    setZoomPhase('closing')
+  }
+
   return {
     zoomOpen,
     zoomPhase,
@@ -67,7 +82,14 @@ export function useProjectsZoom(options: UseProjectsZoomOptions) {
     closeZoom,
     onZoomOpenComplete,
     onZoomCloseComplete,
+    onSidebarEnterComplete,
+    onSidebarCloseComplete,
+    isZoomFullyOpen,
     scrollToRestoreRef,
     zoomTriggerRef,
   }
+}
+
+export function isZoomFullyOpen(phase: ZoomPhase): boolean {
+  return phase === 'openWithSidebar'
 }

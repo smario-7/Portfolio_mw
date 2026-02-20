@@ -7,7 +7,7 @@ import {
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
-import type { ContentData, ContactLink, ContactLinkType } from '@/lib/types/content'
+import type { ContentData, ContactLink, ContactLinkType } from '@/lib/types'
 import { CONTACT_ICONS } from '@/lib/data/contact-icons'
 import { Button } from '@/components/ui/button'
 import {

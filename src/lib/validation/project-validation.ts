@@ -29,7 +29,7 @@ export function validateFullDescriptionBlocks(
             const single = /^\d+$/.test(trimmed)
             const rangeMatch = /^(\d+)-(\d+)$/.exec(trimmed)
             if (single) {
-              // ok
+              // Pojedynczy numer linii jest poprawny, bez dodatkowej walidacji.
             } else if (rangeMatch) {
               const n = parseInt(rangeMatch[1], 10)
               const m = parseInt(rangeMatch[2], 10)

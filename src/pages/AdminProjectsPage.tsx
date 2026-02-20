@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { usePortfolio } from '@/contexts/PortfolioContext'
-import { ProjectsTable } from '@/components/admin/projects-table'
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
+import { ProjectsTable } from '@/components/admin/ProjectsTable'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 
@@ -24,8 +25,9 @@ export default function AdminProjects() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-hidden">
-      <div className="shrink-0">
+    <AdminPageContainer>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-hidden">
+        <div className="shrink-0">
         <h1 className="text-4xl font-bold text-foreground">Projekty</h1>
         <p className="text-muted-foreground">Zarządzaj swoimi projektami</p>
       </div>
@@ -53,11 +55,12 @@ export default function AdminProjects() {
         </Button>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-lg border-2 border-border bg-card/50 overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-4">
-          <ProjectsTable />
+        <div className="flex min-h-0 flex-1 flex-col rounded-lg border-2 border-border bg-card/50 overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pr-4">
+            <ProjectsTable />
+          </div>
         </div>
       </div>
-    </div>
+    </AdminPageContainer>
   )
 }

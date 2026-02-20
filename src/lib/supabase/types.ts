@@ -1,12 +1,12 @@
 import type { Database, Json } from './database.types'
-import type { ContentData } from '@/lib/types/content'
 import type {
+  ContentData,
   Project,
   ProjectCategory,
   ProjectDetailBlock,
   ProjectAttachment,
   ProjectDownloadLinks,
-} from '@/lib/types/project'
+} from '@/lib/types'
 
 export type AppDataRow = Database['public']['Tables']['app_data']['Row']
 export const APP_DATA_CONTENT_KEY = 'content' as const

@@ -75,17 +75,10 @@ export function useContactForm(): UseContactFormReturn {
   const handleSubmit = useCallback(async () => {
     const validation = validateContactForm(name, email, message)
 
-    if (import.meta.env.DEV) {
-      console.log('handleSubmit - walidacja:', validation)
-    }
-
     if (!validation.valid) {
       setErrors(validation.errors)
 
       if (validation.errors.profanity) {
-        if (import.meta.env.DEV) {
-          console.log('Otwieranie modala profanity, profanityFields:', validation.errors.profanityFields)
-        }
         setProfanityDetected(true)
         setProfanityFields(validation.errors.profanityFields ?? [])
         setProfanityModalOpen(true)

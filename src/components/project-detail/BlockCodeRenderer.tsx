@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getFragmentFromPy, getFragmentFromIpynb } from '@/lib/parsers/code-fragment'
 import { getCodeFileContent } from '@/lib/utils/code-fragment-cache'
-import { CodeBlock } from '@/components/code-block'
+import { CodeBlock } from '@/components/shared'
 import type { BlockCode } from '@/lib/types'
 
 interface BlockCodeRendererProps {
@@ -10,6 +10,7 @@ interface BlockCodeRendererProps {
 
 type LoadState = 'loading' | 'error' | 'ok'
 
+/** Ładuje fragment kodu z pliku projektu (.py lub .ipynb) po fragmentId i renderuje go w CodeBlock. */
 export function BlockCodeRenderer({ block }: BlockCodeRendererProps) {
   const [state, setState] = useState<LoadState>('loading')
   const [fragment, setFragment] = useState('')

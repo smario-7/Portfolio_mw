@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
-import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ErrorBoundary } from '@/components/shared'
 import { PortfolioProvider } from '@/contexts/PortfolioContext'
 import AdminLayout from '@/layouts/AdminLayout'
 import HomePage from '@/pages/HomePage'

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase/client'
-import type { ContactMessage, ContactMessageInsert } from '@/lib/types/contact-message'
+import type { ContactMessage, ContactMessageInsert } from '@/lib/types'
 
 function getClient() {
   if (!supabase) {

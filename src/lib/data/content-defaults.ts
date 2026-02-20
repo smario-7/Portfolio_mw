@@ -1,4 +1,4 @@
-import type { ContentData } from '@/lib/types/content'
+import type { ContentData } from '@/lib/types'
 
 export const DEFAULT_CONTENT: ContentData = {
   home: {

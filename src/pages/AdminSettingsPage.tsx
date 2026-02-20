@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
 import { getAdminSettings, saveAdminSettings } from '@/lib/api/admin-settings-api'
+import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
+import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 import { ContactMessagesSection } from '@/components/admin/contact-messages/ContactMessagesSection'
 
 export default function AdminSettings() {
@@ -20,7 +22,7 @@ export default function AdminSettings() {
           setEmail(data.email)
           setName(data.name)
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error('Nie udało się załadować ustawień')
       } finally {
         setIsLoading(false)
@@ -45,7 +47,7 @@ export default function AdminSettings() {
         name: trimmedName,
       })
       toast.success('Ustawienia zapisane')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Nie udało się zapisać ustawień')
     } finally {
       setIsSaving(false)
@@ -53,9 +55,9 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="w-full">
-      <div className="sticky top-0 z-10 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-sm border-b border-border mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <AdminPageContainer>
+      <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-hidden">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold text-foreground">Ustawienia</h1>
             <p className="text-muted-foreground">Zarządzaj ustawieniami profilu</p>
@@ -64,12 +66,10 @@ export default function AdminSettings() {
             {isSaving ? 'Zapisywanie...' : 'Zapisz ustawienia'}
           </Button>
         </div>
-      </div>
 
-      <ScrollArea className="h-[calc(100vh-14rem)]">
-        <div className="space-y-6 pr-4">
-          <div className="rounded-lg border-2 border-border bg-card/50 backdrop-blur-sm p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Konto</h2>
+        <ScrollArea className="min-h-0 flex-1 overflow-hidden">
+          <div className="space-y-6 pr-4">
+          <AdminSectionCard title="Konto">
             {isLoading ? (
               <p className="text-muted-foreground">Ładowanie ustawień...</p>
             ) : (
@@ -97,10 +97,9 @@ export default function AdminSettings() {
                 </div>
               </div>
             )}
-          </div>
+          </AdminSectionCard>
 
-          <div className="rounded-lg border-2 border-border bg-card/50 backdrop-blur-sm p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Powiadomienia</h2>
+          <AdminSectionCard title="Powiadomienia">
             <div className="space-y-3">
               <label className="flex items-center gap-3">
                 <input type="checkbox" defaultChecked className="rounded" />
@@ -111,11 +110,12 @@ export default function AdminSettings() {
                 <span className="text-sm text-foreground">Cotygodniowe raporty</span>
               </label>
             </div>
-          </div>
+          </AdminSectionCard>
 
           <ContactMessagesSection />
-        </div>
-      </ScrollArea>
-    </div>
+          </div>
+        </ScrollArea>
+      </div>
+    </AdminPageContainer>
   )
 }
