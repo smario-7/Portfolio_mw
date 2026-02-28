@@ -1,10 +1,11 @@
 import { GraduationCap } from 'lucide-react'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useContent } from '@/contexts/PortfolioContext'
 import { getToolsCatalog } from '@/lib/services/projects-service'
 import { getToolIcon } from '@/lib/constants/tech-icons'
+import { MONTH_NAMES_PL } from '@/lib/constants/months'
 
 export function AboutSection() {
-  const { content } = usePortfolio()
+  const { content } = useContent()
   const catalog = getToolsCatalog()
   const toolIds = content.about?.tools ?? []
   const selectedTools = toolIds
@@ -28,23 +29,8 @@ export function AboutSection() {
     return orderA - orderB
   })
 
-  const monthNames = [
-    'Styczeń',
-    'Luty',
-    'Marzec',
-    'Kwiecień',
-    'Maj',
-    'Czerwiec',
-    'Lipiec',
-    'Sierpień',
-    'Wrzesień',
-    'Październik',
-    'Listopad',
-    'Grudzień',
-  ]
-
   const formatDate = (year: number, month: number): string => {
-    return `${monthNames[month - 1]} ${year}`
+    return `${MONTH_NAMES_PL[month - 1]} ${year}`
   }
 
   return (

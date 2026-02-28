@@ -26,7 +26,6 @@ export interface UseProjectFormReturn {
   hasChanges: boolean
   handleAddTechnology: () => void
   handleRemoveTechnology: (tech: string) => void
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'image' | 'pdf' | 'ipynb') => void
   handleAttachmentFiles: (e: React.ChangeEvent<HTMLInputElement>) => void
   removeAttachmentFile: (index: number) => void
   addBlock: (block: ProjectDetailBlock) => void
@@ -38,7 +37,6 @@ export interface UseProjectFormReturn {
 }
 
 const getInitialFormData = (initialData?: Partial<Project>): ProjectFormData => {
-  const emptyDownloadLinks = { pdf: undefined, ipynb: undefined, md: undefined, image: undefined }
   if (initialData) {
     return {
       title: initialData.title ?? '',
@@ -52,9 +50,6 @@ const getInitialFormData = (initialData?: Partial<Project>): ProjectFormData => 
       status: initialData.status === 'published' ? 'published' : 'draft',
       image: null,
       imagePath: initialData.image ?? '',
-      pdf: null,
-      ipynb: null,
-      downloadLinks: initialData.downloadLinks ?? emptyDownloadLinks,
       color: initialData.color ?? '',
     }
   }
@@ -71,9 +66,6 @@ const getInitialFormData = (initialData?: Partial<Project>): ProjectFormData => 
     status: 'draft',
     image: null,
     imagePath: '',
-    pdf: null,
-    ipynb: null,
-    downloadLinks: emptyDownloadLinks,
     color: '',
   }
 }
@@ -86,8 +78,8 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
   const [isLoading, setIsLoading] = useState(false)
   const [techInput, setTechInput] = useState('')
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([])
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [autoSaveStatus, _setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [lastSaved, _setLastSaved] = useState<Date | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
 
   const initialFormDataRef = useRef<ProjectFormData>(formData)
@@ -112,35 +104,6 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
     const initialData = JSON.stringify(initialFormDataRef.current)
     setHasChanges(currentData !== initialData)
   }, [formData])
-
-  const performAutoSave = useCallback(async () => {
-    if (!hasChanges) return
-
-    setAutoSaveStatus('saving')
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setAutoSaveStatus('saved')
-      setLastSaved(new Date())
-      setHasChanges(false)
-      initialFormDataRef.current = { ...formData }
-
-      setTimeout(() => {
-        setAutoSaveStatus('idle')
-      }, 2000)
-    } catch (_error) {
-      setAutoSaveStatus('idle')
-    }
-  }, [hasChanges, formData])
-
-  useEffect(() => {
-    if (!hasChanges) return
-
-    const autoSaveTimer = setTimeout(() => {
-      performAutoSave()
-    }, 3000)
-
-    return () => clearTimeout(autoSaveTimer)
-  }, [formData, hasChanges, performAutoSave])
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -172,17 +135,6 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
         technologies: formData.technologies.filter((t) => t !== tech),
       })
       setHasChanges(true)
-    },
-    [formData]
-  )
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>, fieldName: 'image' | 'pdf' | 'ipynb') => {
-      const file = e.target.files?.[0]
-      if (file) {
-        setFormData({ ...formData, [fieldName]: file })
-        setHasChanges(true)
-      }
     },
     [formData]
   )
@@ -265,7 +217,6 @@ export function useProjectForm(options: UseProjectFormOptions): UseProjectFormRe
     hasChanges,
     handleAddTechnology,
     handleRemoveTechnology,
-    handleFileChange,
     handleAttachmentFiles,
     removeAttachmentFile,
     addBlock,

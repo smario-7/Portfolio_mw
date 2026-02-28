@@ -1,4 +1,5 @@
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useProjects } from '@/contexts/PortfolioContext'
+import type { Project } from '@/lib/types'
 import { ProjectDetailHeader } from './ProjectDetailHeader'
 import { ProjectDetailLead } from './ProjectDetailLead'
 import { ProjectDetailStack } from './ProjectDetailStack'
@@ -6,13 +7,16 @@ import { ProjectDetailLinks } from './ProjectDetailLinks'
 import { ProjectDetailAttachments } from './ProjectDetailAttachments'
 import { ProjectDetailFullDescription } from './ProjectDetailFullDescription'
 
-interface ProjectDetailProps {
-  projectId: number
-}
+type ProjectDetailProps =
+  | { project: Project }
+  | { projectId: number }
 
-export function ProjectDetail({ projectId }: ProjectDetailProps) {
-  const { projects } = usePortfolio()
-  const project = projects.find((p) => p.id === projectId)
+export function ProjectDetail(props: ProjectDetailProps) {
+  const { projects } = useProjects()
+  const project =
+    'project' in props
+      ? props.project
+      : projects.find((p) => p.id === props.projectId)
   if (!project) return null
 
   return (

@@ -4,72 +4,45 @@ import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
 import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 import { StatCard } from '@/components/admin/StatCard'
 import { VisitsModal } from '@/components/admin/dashboard'
-import { usePortfolio } from '@/contexts/PortfolioContext'
-import { countAllStorageFiles } from '@/lib/api/storage-api'
-import { getProjectsLastUpdatedAt } from '@/lib/api/projects-api'
-import { getContentLastUpdatedAt } from '@/lib/api/content-api'
-import { getPageViewCount, getRecentPageViews } from '@/lib/api/page-views-api'
-import { supabase } from '@/lib/supabase/client'
+import { useProjects } from '@/contexts/PortfolioContext'
+import { getDashboardStats } from '@/lib/services/dashboard-service'
 import { formatRelativeDate } from '@/lib/utils/format-relative-date'
+import { reportError } from '@/lib/errors'
 
 export default function AdminDashboard() {
-  const { projects, loading } = usePortfolio()
+  const { projects, loading } = useProjects()
   const [fileCount, setFileCount] = useState<number | null>(null)
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
   const [viewCount, setViewCount] = useState<number | null>(null)
   const [recentViews, setRecentViews] = useState<{ viewed_at: string }[]>([])
   const [visitsModalOpen, setVisitsModalOpen] = useState(false)
   const totalProjects = projects.length
-
-  const refreshVisits = useCallback(() => {
-    getPageViewCount('home').then(setViewCount).catch(() => setViewCount(null))
-    getRecentPageViews('home', 5).then(setRecentViews).catch(() => setRecentViews([]))
-  }, [])
   const publishedCount = projects.filter((p) => p.status === 'published').length
 
-  useEffect(() => {
-    if (!supabase) {
-      setFileCount(0)
-      return
-    }
-    countAllStorageFiles()
-      .then(setFileCount)
-      .catch(() => setFileCount(0))
-  }, [])
-
-  useEffect(() => {
-    if (!supabase) return
-    Promise.all([
-      getProjectsLastUpdatedAt(),
-      getContentLastUpdatedAt(),
-    ])
-      .then(([projectsDate, contentDate]) => {
-        const dates = [projectsDate, contentDate].filter(
-          (d): d is string => d != null && d !== ''
-        )
-        if (dates.length === 0) {
-          setLastUpdatedAt(null)
-          return
-        }
-        const latest = dates.sort((a, b) => b.localeCompare(a))[0]
-        setLastUpdatedAt(latest)
+  const loadStats = useCallback(() => {
+    getDashboardStats()
+      .then((stats) => {
+        setFileCount(stats.fileCount)
+        setLastUpdatedAt(stats.lastUpdatedAt)
+        setViewCount(stats.viewCount)
+        setRecentViews(stats.recentViews)
       })
-      .catch(() => setLastUpdatedAt(null))
+      .catch((err) => {
+        reportError(err, { context: 'dashboard_load_stats' })
+        setFileCount(0)
+        setLastUpdatedAt(null)
+        setViewCount(null)
+        setRecentViews([])
+      })
   }, [])
 
   useEffect(() => {
-    if (!supabase) return
-    getPageViewCount('home')
-      .then(setViewCount)
-      .catch(() => setViewCount(null))
-  }, [])
+    loadStats()
+  }, [loadStats])
 
-  useEffect(() => {
-    if (!supabase) return
-    getRecentPageViews('home', 5)
-      .then(setRecentViews)
-      .catch(() => setRecentViews([]))
-  }, [])
+  const refreshVisits = useCallback(() => {
+    loadStats()
+  }, [loadStats])
 
   return (
     <AdminPageContainer>

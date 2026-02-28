@@ -6,6 +6,7 @@ import {
   updateProject as updateProjectApi,
   deleteProject as deleteProjectApi,
   saveProjects as saveProjectsApi,
+  getProjectsLastUpdatedAt as getProjectsLastUpdatedAtApi,
 } from '@/lib/api/projects-api'
 import { supabase } from '@/lib/supabase/client'
 import { TOOLS_CATALOG } from '@/lib/data/tools-catalog'
@@ -45,6 +46,10 @@ export async function updateProject(id: number, patch: Partial<Project>): Promis
 
 export async function deleteProject(id: number): Promise<void> {
   await deleteProjectApi(id)
+}
+
+export async function getProjectsLastUpdatedAt(): Promise<string | null> {
+  return getProjectsLastUpdatedAtApi()
 }
 
 export function getProjectFilters(list: Project[]): string[] {

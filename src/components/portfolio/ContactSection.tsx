@@ -6,7 +6,7 @@ import {
   Mail,
   type LucideIcon,
 } from 'lucide-react'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useContent } from '@/contexts/PortfolioContext'
 import { CONTACT_ICONS } from '@/lib/data/contact-icons'
 import type { ContactLinkType } from '@/lib/types'
 import { useContactForm } from '@/hooks/use-contact-form'
@@ -58,7 +58,7 @@ function getCounterColor(count: number, max: number): string {
 }
 
 export function ContactSection() {
-  const { content } = usePortfolio()
+  const { content } = useContent()
   const contact = content.contact
   const title = contact.title?.trim() || 'Skontaktuj się'
   const description = contact.description?.trim() || ''

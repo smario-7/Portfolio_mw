@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { SESSION_CHECK_INTERVAL_MS } from '@/lib/constants/context-save'
 import {
   getSession,
   onAuthStateChange,
@@ -66,7 +67,6 @@ export function useAdminSession() {
       window.addEventListener(event, handleActivity, { passive: true })
     })
 
-    // Co 60 s sprawdzamy timeout sesji przy braku aktywności.
     const intervalId = setInterval(async () => {
       if (session) {
         const timedOut = await checkSessionTimeout()
@@ -74,7 +74,7 @@ export function useAdminSession() {
           clearInterval(intervalId)
         }
       }
-    }, 60000)
+    }, SESSION_CHECK_INTERVAL_MS)
 
     return () => {
       unsubscribe()

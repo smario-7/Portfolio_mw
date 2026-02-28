@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Lock } from 'lucide-react'
+import { ADMIN_DASHBOARD } from '@/lib/constants/routes'
+import { getFullUrlForRoute } from '@/lib/constants/app-url'
 import { signInWithGoogle, isAuthAvailable } from '@/lib/supabase/auth'
 
 export default function AdminLogin() {
@@ -8,11 +10,7 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const redirectTo = useMemo(
-    () =>
-      `${window.location.origin}${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/admin/dashboard`,
-    []
-  )
+  const redirectTo = useMemo(() => getFullUrlForRoute(ADMIN_DASHBOARD), [])
 
   useEffect(() => {
     const hash = window.location.hash.slice(1)
@@ -31,7 +29,7 @@ export default function AdminLogin() {
       setErrorMessage(null)
       signInWithGoogle(redirectTo)
     } else {
-      navigate('/admin/dashboard')
+      navigate(ADMIN_DASHBOARD)
     }
   }
 

@@ -11,17 +11,20 @@ import {
   CartesianGrid,
   Tooltip,
   Brush,
+  Dot,
 } from 'recharts'
 import type { VisitsChartType } from '@/components/admin/dashboard/types'
 import type { ChartDataPoint } from '@/components/admin/dashboard/types'
 import { useVisitsChartRange } from './useVisitsChartRange'
-import { formatTimeAxisLabel, getXAxisInterval, getDaySpan } from './visits-chart-format'
+import { getTimeAxisTicks } from './time-axis-ticks'
+import { formatTimeAxisLabelFromMs, getDaySpan } from './visits-chart-format'
 import {
   CHART_MIN_WIDTH,
   POINT_WIDTH,
   CHART_HEIGHT,
   Y_AXIS_TICK_COUNT,
   GRID_STROKE_OPACITY,
+  MAX_X_LABELS,
 } from './visits-chart-constants'
 
 const CHART_COLOR = 'var(--chart-1)'
@@ -74,7 +77,6 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
   )
   const safeStart = Math.max(0, Math.min(range.startIndex, data.length - 1))
   const safeEnd = Math.min(data.length, Math.max(range.endIndex, safeStart + 1))
-  const visibleCount = safeEnd - safeStart
   const daySpan = useMemo(
     () =>
       getDaySpan(
@@ -83,8 +85,20 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
       ),
     [data, safeStart, safeEnd]
   )
-  const xAxisInterval = getXAxisInterval(visibleCount)
-  const tickFormatter = (value: string) => formatTimeAxisLabel(value, daySpan)
+  const xDomain = useMemo((): [number, number] => {
+    const first = data[safeStart]?.timeMs
+    const last = data[safeEnd - 1]?.timeMs
+    const min = first != null ? Number(first) : NaN
+    const max = last != null ? Number(last) : NaN
+    if (Number.isNaN(min) || Number.isNaN(max)) return [0, 1]
+    if (min === max) return [min, min + 86400000]
+    return [min, max]
+  }, [data, safeStart, safeEnd])
+  const xTicks = useMemo(
+    () => getTimeAxisTicks(xDomain, daySpan),
+    [xDomain, daySpan]
+  )
+  const xTickFormatter = (ms: number) => formatTimeAxisLabelFromMs(ms, daySpan)
   const safeRange = useMemo(() => ({ startIndex: safeStart, endIndex: safeEnd }), [safeStart, safeEnd])
 
   if (data.length === 0) {
@@ -98,8 +112,8 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
     )
   }
 
-  const chartWidth = Math.round(dimensions.width)
-  const chartHeight = Math.round(dimensions.height)
+  const chartWidth = Math.round(dimensions.width) || 1
+  const chartHeight = Math.round(dimensions.height) || 1
   const brushWidth = Math.max(0, chartWidth - 40)
 
   const commonProps = {
@@ -120,22 +134,22 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
     />
   )
 
-  const brushTickFormatter = (v: string) => {
-    const point = data.find((d) => d.time === v)
-    return point?.full ?? v
+  const brushTickFormatter = (v: number) => {
+    const point = data.find((d) => d.timeMs === v)
+    return point?.full ?? formatTimeAxisLabelFromMs(v, daySpan)
   }
 
   const brushEl = (
     <Brush
-      dataKey="time"
+      dataKey="timeMs"
       width={brushWidth}
       height={24}
       stroke={CHART_COLOR}
       startIndex={safeRange.startIndex}
-      endIndex={safeRange.endIndex}
+      endIndex={Math.max(safeRange.startIndex, safeRange.endIndex - 1)}
       onChange={(newRange) => {
         if (newRange && typeof newRange.startIndex === 'number' && typeof newRange.endIndex === 'number') {
-          setRange({ startIndex: newRange.startIndex, endIndex: newRange.endIndex })
+          setRange({ startIndex: newRange.startIndex, endIndex: newRange.endIndex + 1 })
         }
       }}
       tickFormatter={brushTickFormatter}
@@ -157,9 +171,11 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
 
   const xAxis = (
     <XAxis
-      dataKey="time"
-      tickFormatter={tickFormatter}
-      interval={xAxisInterval}
+      dataKey="timeMs"
+      type="number"
+      domain={xDomain}
+      {...(xTicks.length > 0 ? { ticks: xTicks } : { tickCount: MAX_X_LABELS })}
+      tickFormatter={xTickFormatter}
       tick={axisTickStyle}
     />
   )
@@ -180,7 +196,11 @@ export function VisitsChart({ data, chartType }: VisitsChartProps) {
           dataKey="count"
           stroke={CHART_COLOR}
           strokeWidth={2}
-          dot={{ r: 3 }}
+          dot={(props) => {
+            const { key: dotKey, ...rest } = props
+            const count = (rest.payload as ChartDataPoint)?.count
+            return count === 0 ? <Dot key={dotKey} {...rest} r={0} /> : <Dot key={dotKey} {...rest} r={3} />
+          }}
         />
         {brushEl}
       </LineChart>

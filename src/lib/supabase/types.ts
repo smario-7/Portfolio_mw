@@ -86,7 +86,6 @@ export function projectToProjectsInsert(
     order: project.order ?? 0,
     full_description: (project.fullDescription ?? []) as unknown as Json,
     attachments: (project.attachments ?? []) as unknown as Json,
-    download_links: (project.downloadLinks ?? null) as unknown as Json | null,
     status: project.status ?? 'draft',
     featured: project.featured ?? false,
   }
@@ -103,9 +102,8 @@ export function projectToProjectsUpdate(project: Partial<Project>): ProjectsUpda
   if (project.demo !== undefined) u.demo = project.demo
   if (project.color !== undefined) u.color = project.color ?? null
   if (project.order !== undefined) u.order = project.order
-  if (project.fullDescription !== undefined) u.full_description = project.fullDescription as unknown as Json
-  if (project.attachments !== undefined) u.attachments = project.attachments as unknown as Json
-  if (project.downloadLinks !== undefined) u.download_links = (project.downloadLinks ?? null) as unknown as Json | null
+  if (project.fullDescription !== undefined) u.full_description = (project.fullDescription ?? []) as unknown as Json
+  if (project.attachments !== undefined) u.attachments = (project.attachments ?? []) as unknown as Json
   if (project.status !== undefined) u.status = project.status
   if (project.featured !== undefined) u.featured = project.featured
   return u

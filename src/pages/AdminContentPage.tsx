@@ -1,7 +1,8 @@
 import { useParams, Navigate } from 'react-router-dom'
 import { Check, Loader2, Save } from 'lucide-react'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useContent } from '@/contexts/PortfolioContext'
 import { useContentForm } from '@/hooks/use-content-form'
+import { ADMIN_CONTENT_HOME } from '@/lib/constants/routes'
 import { VALID_SECTIONS, type Section } from '@/lib/constants/sections'
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
 import { ContentHomeTab } from '@/components/admin/content/ContentHomeTab'
@@ -17,10 +18,10 @@ function isValidSection(s: string | undefined): s is Section {
 export default function ContentEditingPage() {
   const { section } = useParams<{ section: string }>()
   if (section !== undefined && !isValidSection(section)) {
-    return <Navigate to="/admin/content/home" replace />
+    return <Navigate to={ADMIN_CONTENT_HOME} replace />
   }
   const activeSection: Section = (section as Section) ?? 'home'
-  const { content: savedContent, replaceContent } = usePortfolio()
+  const { content: savedContent, replaceContent } = useContent()
   const form = useContentForm({
     initialContent: savedContent,
     onSaved: replaceContent,

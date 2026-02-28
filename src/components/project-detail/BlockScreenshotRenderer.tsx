@@ -25,6 +25,8 @@ export function BlockScreenshotRenderer({ block }: BlockScreenshotRendererProps)
         src={src}
         alt={block.alt ?? ''}
         className="max-h-[400px] w-full rounded-lg border border-border object-contain"
+        loading="lazy"
+        decoding="async"
         onError={() => setError(true)}
       />
       {block.alt && (

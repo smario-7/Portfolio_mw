@@ -1,17 +1,25 @@
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, FileText, Settings, LogOut, Home, User, Mail } from 'lucide-react'
+import {
+  ADMIN_DASHBOARD,
+  ADMIN_CONTENT_HOME,
+  ADMIN_PROJECTS,
+  ADMIN_CONTENT_ABOUT,
+  ADMIN_CONTENT_CONTACT,
+  ADMIN_SETTINGS,
+} from '@/lib/constants/routes'
 import { ADMIN_SIDEBAR_WIDTH_CLASS } from '@/lib/constants/layout'
 
 export function Sidebar() {
   const { pathname } = useLocation()
 
   const links = [
-    { to: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/admin/projects', label: 'Projekty', icon: FileText },
-    { to: '/admin/content/home', label: 'Home', icon: Home },
-    { to: '/admin/content/about', label: 'O mnie', icon: User },
-    { to: '/admin/content/contact', label: 'Kontakt', icon: Mail },
-    { to: '/admin/settings', label: 'Ustawienia', icon: Settings },
+    { to: ADMIN_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+    { to: ADMIN_CONTENT_HOME, label: 'Home', icon: Home },
+    { to: ADMIN_PROJECTS, label: 'Projekty', icon: FileText },
+    { to: ADMIN_CONTENT_ABOUT, label: 'O mnie', icon: User },
+    { to: ADMIN_CONTENT_CONTACT, label: 'Kontakt', icon: Mail },
+    { to: ADMIN_SETTINGS, label: 'Ustawienia', icon: Settings },
   ]
 
   return (

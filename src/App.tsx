@@ -1,40 +1,46 @@
+import * as React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ADMIN_LOGIN, ADMIN_CONTENT_ABOUT, ADMIN_CONTENT_HOME, ADMIN_PROJECTS } from '@/lib/constants/routes'
+import { getRouterBasename } from '@/lib/constants/app-url'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
-import { ErrorBoundary } from '@/components/shared'
+import { ErrorBoundary, PageLoader } from '@/components/shared'
 import { PortfolioProvider } from '@/contexts/PortfolioContext'
-import AdminLayout from '@/layouts/AdminLayout'
 import HomePage from '@/pages/HomePage'
-import AdminLoginPage from '@/pages/AdminLoginPage'
-import AdminDashboardPage from '@/pages/AdminDashboardPage'
-import AdminContentPage from '@/pages/AdminContentPage'
-import AdminProjectsPage from '@/pages/AdminProjectsPage'
-import AdminProjectEditPage from '@/pages/AdminProjectEditPage'
-import AdminSettingsPage from '@/pages/AdminSettingsPage'
+
+const AdminLayout = React.lazy(() => import('@/layouts/AdminLayout'))
+const AdminLoginPage = React.lazy(() => import('@/pages/AdminLoginPage'))
+const AdminDashboardPage = React.lazy(() => import('@/pages/AdminDashboardPage'))
+const AdminContentPage = React.lazy(() => import('@/pages/AdminContentPage'))
+const AdminProjectsPage = React.lazy(() => import('@/pages/AdminProjectsPage'))
+const AdminProjectEditPage = React.lazy(() => import('@/pages/AdminProjectEditPage'))
+const AdminSettingsPage = React.lazy(() => import('@/pages/AdminSettingsPage'))
 
 function App() {
-  const basename = import.meta.env.DEV ? '/' : (import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, ''))
-  
+  const basename = getRouterBasename()
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark" attribute="class" enableSystem>
         <BrowserRouter basename={basename}>
           <PortfolioProvider>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="admin" element={<AdminLayout />}>
-                <Route index element={<Navigate to="/admin/login" replace />} />
-                <Route path="login" element={<AdminLoginPage />} />
-                <Route path="dashboard" element={<AdminDashboardPage />} />
-                <Route path="about" element={<Navigate to="/admin/content/about" replace />} />
-                <Route path="content" element={<Navigate to="/admin/content/home" replace />} />
-                <Route path="content/:section" element={<AdminContentPage />} />
-                <Route path="projects" element={<AdminProjectsPage />} />
-                <Route path="projects/new" element={<Navigate to="/admin/projects" replace />} />
-                <Route path="projects/:id" element={<AdminProjectEditPage />} />
-                <Route path="settings" element={<AdminSettingsPage />} />
-              </Route>
-            </Routes>
+            <React.Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="admin" element={<AdminLayout />}>
+                  <Route index element={<Navigate to={ADMIN_LOGIN} replace />} />
+                  <Route path="login" element={<AdminLoginPage />} />
+                  <Route path="dashboard" element={<AdminDashboardPage />} />
+                  <Route path="about" element={<Navigate to={ADMIN_CONTENT_ABOUT} replace />} />
+                  <Route path="content" element={<Navigate to={ADMIN_CONTENT_HOME} replace />} />
+                  <Route path="content/:section" element={<AdminContentPage />} />
+                  <Route path="projects" element={<AdminProjectsPage />} />
+                  <Route path="projects/new" element={<Navigate to={ADMIN_PROJECTS} replace />} />
+                  <Route path="projects/:id" element={<AdminProjectEditPage />} />
+                  <Route path="settings" element={<AdminSettingsPage />} />
+                </Route>
+              </Routes>
+            </React.Suspense>
             <Toaster />
           </PortfolioProvider>
         </BrowserRouter>

@@ -17,6 +17,8 @@ export function ProjectDetailLead({ project }: ProjectDetailLeadProps) {
             src={imageSrc}
             alt={project.title}
             className="max-h-[400px] w-full rounded-lg object-contain"
+            loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="space-y-4 text-center">

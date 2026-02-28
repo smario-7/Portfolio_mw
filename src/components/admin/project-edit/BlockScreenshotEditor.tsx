@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Upload, Image as ImageIcon, Trash2 } from 'lucide-react'
 import type { BlockScreenshot } from '@/lib/types'
-import { uploadProjectFile, deleteProjectFile } from '@/lib/api/storage-api'
+import * as storageService from '@/lib/services/storage-service'
 import { getStorageFileUrl } from '@/lib/utils/storage-url'
 import { isValidImageFile } from '@/lib/constants/file-types'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,8 @@ interface BlockScreenshotEditorProps {
   onChange: (block: BlockScreenshot) => void
   existingImagePaths: string[]
   onRemoveBlock?: () => void
+  onStorageImageDeleted?: (path: string) => void
+  onStorageImageUploaded?: (path: string) => void
 }
 
 export function BlockScreenshotEditor({
@@ -21,6 +23,8 @@ export function BlockScreenshotEditor({
   onChange,
   existingImagePaths,
   onRemoveBlock,
+  onStorageImageDeleted,
+  onStorageImageUploaded,
 }: BlockScreenshotEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -41,8 +45,9 @@ export function BlockScreenshotEditor({
     }
     setUploading(true)
     try {
-      const data = await uploadProjectFile(projectId, file)
+      const data = await storageService.uploadProjectFile(projectId, file)
       onChange({ ...block, path: data.path })
+      onStorageImageUploaded?.(data.path)
       toast.success('Obrazek wgrany')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Błąd wgrywania')
@@ -79,7 +84,8 @@ export function BlockScreenshotEditor({
     if (!block.path) return
     setDeleting(true)
     try {
-      await deleteProjectFile(projectId, block.path)
+      await storageService.deleteProjectFile(projectId, block.path)
+      onStorageImageDeleted?.(block.path)
       onChange({ ...block, path: '' })
       toast.success('Plik usunięty')
     } catch (err) {

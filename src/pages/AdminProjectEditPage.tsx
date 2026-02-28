@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Loader2, Trash2 } from 'lucide-react'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { ChevronLeft, Eye, Loader2, Trash2 } from 'lucide-react'
+import { useProjects } from '@/contexts/PortfolioContext'
 import { useProjectForm } from '@/hooks/use-project-form'
 import * as projectsService from '@/lib/services/projects-service'
 import { supabase } from '@/lib/supabase/client'
-import { uploadProjectFile, deleteProjectFile } from '@/lib/api/storage-api'
-import { getStorageBaseUrl } from '@/lib/utils/storage-url'
+import * as storageService from '@/lib/services/storage-service'
+import { isValidAttachmentFile, pathToAttachment } from '@/lib/constants/file-types'
 import type { ProjectAttachment } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -28,18 +28,26 @@ import {
   ProjectEditFullDescription,
 } from '@/components/admin/project-edit'
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
+import { ProjectPreviewModal } from '@/components/admin/project-preview'
+import { buildProjectFromFormData } from '@/lib/data/project-normalize'
+import { ADMIN_PROJECTS } from '@/lib/constants/routes'
 import { ADMIN_PAGE_CONTAINER_WIDE_CLASS } from '@/lib/constants/layout'
 import { toast } from 'sonner'
+import { ProjectLoadError, reportError } from '@/lib/errors'
 
 export default function AdminProjectEditPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { projects, setProjects, updateProject, deleteProject } = usePortfolio()
+  const { projects, setProjects, updateProject, deleteProject } = useProjects()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [fetchingProject, setFetchingProject] = useState(false)
+  const [_fetchingProject, setFetchingProject] = useState(false)
   const [existingAttachments, setExistingAttachments] = useState<ProjectAttachment[]>([])
+  const [attachmentPool, setAttachmentPool] = useState<ProjectAttachment[]>([])
+  const [storageImagePaths, setStorageImagePaths] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
 
   const projectId = id != null ? parseInt(id, 10) : NaN
   const project = Number.isNaN(projectId)
@@ -56,8 +64,12 @@ export default function AdminProjectEditPage() {
           prev.some((p) => p.id === projectId) ? prev : [...prev, fetched]
         )
       })
-      .catch(() => {
-        navigate('/admin/projects', { replace: true })
+      .catch((err) => {
+        const msg = reportError(new ProjectLoadError('getProjectById', err), {
+          context: 'admin_project_edit_load',
+        })
+        toast.error(msg)
+        navigate(ADMIN_PROJECTS, { replace: true })
       })
       .finally(() => {
         setFetchingProject(false)
@@ -77,7 +89,6 @@ export default function AdminProjectEditPage() {
       demo: project.demo,
       image: project.image,
       color: project.color,
-      downloadLinks: project.downloadLinks,
       status: project.status,
     }
   }, [project])
@@ -96,13 +107,38 @@ export default function AdminProjectEditPage() {
     }
   }, [project?.id])
 
+  useEffect(() => {
+    if (!projectId) return
+    storageService.listProjectFilePaths(projectId)
+      .then(setStorageImagePaths)
+      .catch((err) => {
+        reportError(err, { context: 'admin_project_edit_storage_list' })
+        setStorageImagePaths([])
+      })
+  }, [projectId])
+
+  useEffect(() => {
+    if (!projectId) return
+    storageService.listProjectFilePaths(projectId)
+      .then((paths) => {
+        const pool = paths
+          .filter((p) => isValidAttachmentFile(p))
+          .map(pathToAttachment)
+        setAttachmentPool(pool)
+      })
+      .catch((err) => {
+        reportError(err, { context: 'admin_project_edit_attachment_pool' })
+        setAttachmentPool([])
+      })
+  }, [projectId])
+
   if (id == null || Number.isNaN(projectId)) {
-    navigate('/admin/projects', { replace: true })
+    navigate(ADMIN_PROJECTS, { replace: true })
     return null
   }
 
   if (project == null) {
-    if (fetchingProject && supabase) {
+    if (supabase) {
       return (
         <AdminPageContainer>
           <div className="flex items-center justify-center py-12">
@@ -111,46 +147,38 @@ export default function AdminProjectEditPage() {
         </AdminPageContainer>
       )
     }
-    navigate('/admin/projects', { replace: true })
+    navigate(ADMIN_PROJECTS, { replace: true })
     return null
   }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.validateForm()) return
+    if (!form.validateForm()) {
+      toast.error('Popraw błędy w formularzu')
+      return
+    }
 
     form.setIsLoading(true)
     try {
       const imageValue =
         form.formData.imagePath?.trim() || project.image || undefined
-      const dl = form.formData.downloadLinks ?? {}
-      const downloadLinks = {
-        ...(dl.pdf ? { pdf: dl.pdf } : {}),
-        ...(dl.ipynb ? { ipynb: dl.ipynb } : {}),
-        ...(dl.md ? { md: dl.md } : {}),
-        ...(dl.image ? { image: dl.image } : {}),
-      }
       await updateProject(projectId, {
         title: form.formData.title.trim(),
         description: form.formData.shortDescription.trim(),
-        fullDescription:
-          form.formData.fullDescriptionBlocks.length > 0
-            ? form.formData.fullDescriptionBlocks
-            : undefined,
+        fullDescription: form.formData.fullDescriptionBlocks,
         category: form.formData.category,
         stack: form.formData.technologies,
         github: form.formData.githubUrl.trim(),
         demo: form.formData.demoUrl.trim(),
         image: imageValue,
         attachments: existingAttachments,
-        downloadLinks: Object.keys(downloadLinks).length > 0 ? downloadLinks : undefined,
         color: form.formData.color?.trim() || undefined,
         status: form.formData.status,
       })
       toast.success('Projekt zaktualizowany')
-      navigate('/admin/projects')
+      navigate(ADMIN_PROJECTS)
     } catch {
-      toast.error('Nie udało się zapisać')
+      // błąd zapisu – toast wyświetla PortfolioContext.updateProject
     } finally {
       form.setIsLoading(false)
     }
@@ -160,7 +188,7 @@ export default function AdminProjectEditPage() {
     deleteProject(projectId)
     setShowDeleteDialog(false)
     toast.success('Projekt usunięty')
-    navigate('/admin/projects')
+    navigate(ADMIN_PROJECTS)
   }
 
   const onFileAttach = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,12 +197,18 @@ export default function AdminProjectEditPage() {
     e.target.value = ''
     setUploading(true)
     try {
-      const data = await uploadProjectFile(projectId, file)
-      setExistingAttachments((prev) => [
-        ...prev,
-        { label: data.label, path: data.path, type: data.type as ProjectAttachment['type'] },
-      ])
-      toast.success('Załącznik dodany')
+      await storageService.uploadProjectFile(projectId, file)
+      toast.success('Plik wgrany. Dodaj go do listy z puli poniżej.')
+      storageService.listProjectFilePaths(projectId)
+        .then((paths) => {
+          const pool = paths
+            .filter((p) => isValidAttachmentFile(p))
+            .map(pathToAttachment)
+          setAttachmentPool(pool)
+        })
+        .catch((err) => {
+          reportError(err, { context: 'admin_project_edit_attachment_pool_refresh' })
+        })
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Błąd dodawania pliku')
     } finally {
@@ -182,38 +216,40 @@ export default function AdminProjectEditPage() {
     }
   }
 
-  const removeAttachment = async (path: string) => {
-    try {
-      await deleteProjectFile(projectId, path)
-      setExistingAttachments((prev) => prev.filter((a) => a.path !== path))
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Nie udało się usunąć pliku')
-    }
+  const onAttachmentToggle = (path: string) => {
+    setExistingAttachments((prev) => {
+      const isInList = prev.some((a) => a.path === path)
+      if (isInList) return prev.filter((a) => a.path !== path)
+      const item = attachmentPool.find((p) => p.path === path)
+      return item ? [...prev, item] : prev
+    })
   }
 
   const onImageUpload = async (file: File): Promise<string> => {
-    const data = await uploadProjectFile(projectId, file)
+    const data = await storageService.uploadProjectFile(projectId, file)
+    setStorageImagePaths((prev) => (prev.includes(data.path) ? prev : [...prev, data.path]))
     return data.path
   }
 
   const onImageDelete = async (path: string): Promise<void> => {
-    await deleteProjectFile(projectId, path)
+    await storageService.deleteProjectFile(projectId, path)
+    setStorageImagePaths((prev) => prev.filter((p) => p !== path))
   }
 
-  const storageBase = getStorageBaseUrl()
+  const onStorageImageDeleted = (path: string) => {
+    setStorageImagePaths((prev) => prev.filter((p) => p !== path))
+  }
 
-  const existingImagePaths = useMemo(() => {
-    const paths: string[] = []
-    const current = form.formData.imagePath?.trim()
-    if (current && !paths.includes(current)) paths.push(current)
-    if (project?.image?.trim() && !paths.includes(project.image.trim())) paths.push(project.image.trim())
-    form.formData.fullDescriptionBlocks.forEach((b) => {
-      if (b.type === 'screenshot' && b.path?.trim() && !paths.includes(b.path.trim())) {
-        paths.push(b.path.trim())
-      }
-    })
-    return paths
-  }, [project?.image, form.formData.imagePath, form.formData.fullDescriptionBlocks])
+  const onStorageImageUploaded = (path: string) => {
+    setStorageImagePaths((prev) => (prev.includes(path) ? prev : [...prev, path]))
+  }
+
+  const previewProject = buildProjectFromFormData({
+    formData: form.formData,
+    attachments: existingAttachments,
+    projectId: project.id,
+    existingImagePath: project.image,
+  })
 
   return (
     <AdminPageContainer className={ADMIN_PAGE_CONTAINER_WIDE_CLASS}>
@@ -221,7 +257,7 @@ export default function AdminProjectEditPage() {
         <div className="shrink-0 border-b border-border bg-background/95 px-4 py-4 backdrop-blur-sm">
           <div className="mb-4">
             <Link
-              to="/admin/projects"
+              to={ADMIN_PROJECTS}
               className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -238,6 +274,15 @@ export default function AdminProjectEditPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                aria-label="Podgląd całości"
+                onClick={() => setShowPreviewModal(true)}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Podgląd całości
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -267,9 +312,13 @@ export default function AdminProjectEditPage() {
             formData={form.formData}
             setFormData={form.setFormData}
             projectId={projectId}
-            existingImagePaths={existingImagePaths}
+            existingImagePaths={storageImagePaths}
             onImageUpload={onImageUpload}
             onImageDelete={onImageDelete}
+            fieldErrors={{
+              title: form.errors.title,
+              shortDescription: form.errors.shortDescription,
+            }}
           />
           <ProjectEditStack
             formData={form.formData}
@@ -277,20 +326,23 @@ export default function AdminProjectEditPage() {
             setTechInput={form.setTechInput}
             onAddTechnology={form.handleAddTechnology}
             onRemoveTechnology={form.handleRemoveTechnology}
+            error={form.errors.technologies}
           />
           <ProjectEditLinks
             formData={form.formData}
             setFormData={form.setFormData}
+            attachmentPool={attachmentPool}
             existingAttachments={existingAttachments}
-            existingImagePaths={existingImagePaths}
+            onAttachmentToggle={onAttachmentToggle}
+            fieldErrors={{
+              githubUrl: form.errors.githubUrl,
+              demoUrl: form.errors.demoUrl,
+            }}
           />
           <ProjectEditAttachments
             fileInputRef={fileInputRef}
             uploading={uploading}
-            existingAttachments={existingAttachments}
-            storageBase={storageBase}
             onFileAttach={onFileAttach}
-            removeAttachment={removeAttachment}
           />
           <ProjectEditFullDescription
             projectId={projectId}
@@ -300,13 +352,15 @@ export default function AdminProjectEditPage() {
             moveBlock={form.moveBlock}
             updateBlock={form.updateBlock}
             existingAttachments={existingAttachments}
-            existingImagePaths={existingImagePaths}
+            existingImagePaths={storageImagePaths}
+            onStorageImageDeleted={onStorageImageDeleted}
+            onStorageImageUploaded={onStorageImageUploaded}
             blockErrors={form.errors.fullDescriptionBlocks}
           />
 
           <div className="flex gap-4">
             <Link
-              to="/admin/projects"
+              to={ADMIN_PROJECTS}
               className="flex-1 rounded-lg border-2 border-border px-6 py-3 text-center font-medium text-foreground transition-colors hover:bg-card"
             >
               Anuluj
@@ -336,6 +390,12 @@ export default function AdminProjectEditPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ProjectPreviewModal
+        open={showPreviewModal}
+        onOpenChange={setShowPreviewModal}
+        previewProject={previewProject}
+      />
     </AdminPageContainer>
   )
 }

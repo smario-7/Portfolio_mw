@@ -4,7 +4,8 @@ import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/di
 import { Button } from '@/components/ui/button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { LineChart as LineIcon, BarChart2, ScatterChart } from 'lucide-react'
-import { getAllPageViews } from '@/lib/api/page-views-api'
+import * as pageViewsService from '@/lib/services/page-views-service'
+import { PageViewsLoadError, reportError } from '@/lib/errors'
 import { useVisitsChartData } from '@/hooks/use-visits-chart-data'
 import { VisitsChart } from '@/components/admin/dashboard/visits-chart/VisitsChart'
 import { VisitsResetModal } from '@/components/admin/dashboard/VisitsResetModal'
@@ -23,15 +24,27 @@ export function VisitsModal({ open, onOpenChange, onDataChange }: VisitsModalPro
 
   useEffect(() => {
     if (!open) return
-    getAllPageViews('home')
+    pageViewsService.getAllPageViews('home')
       .then(setRecords)
-      .catch(() => setRecords([]))
+      .catch((err) => {
+        reportError(new PageViewsLoadError('getAllPageViews', err), {
+          context: 'visits_modal_load',
+        })
+        setRecords([])
+      })
   }, [open])
 
   const chartData = useVisitsChartData(records)
 
   const handleDeleted = () => {
-    getAllPageViews('home').then(setRecords).catch(() => setRecords([]))
+    pageViewsService.getAllPageViews('home')
+      .then(setRecords)
+      .catch((err) => {
+        reportError(new PageViewsLoadError('getAllPageViews after delete', err), {
+          context: 'visits_modal_after_delete',
+        })
+        setRecords([])
+      })
     onDataChange?.()
   }
 

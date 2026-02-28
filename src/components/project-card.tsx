@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +11,7 @@ interface ProjectCardProps {
   onSelect?: (projectId: number) => void
 }
 
-export function ProjectCard({ project, onSelect }: ProjectCardProps) {
+function ProjectCardInner({ project, onSelect }: ProjectCardProps) {
   const { id, title, description, stack, color, github, demo } = project
   const Wrapper = onSelect ? 'button' : 'div'
   const wrapperProps = onSelect
@@ -93,3 +94,5 @@ export function ProjectCard({ project, onSelect }: ProjectCardProps) {
     </Wrapper>
   )
 }
+
+export const ProjectCard = React.memo(ProjectCardInner)

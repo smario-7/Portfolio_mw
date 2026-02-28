@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -14,38 +15,59 @@ import { projects as defaultProjects } from '@/lib/data/projects'
 import { migrateContentCourses, migrateProjectsOrder } from '@/lib/data/migrations'
 import * as contentService from '@/lib/services/content-service'
 import * as projectsService from '@/lib/services/projects-service'
-import { deleteProjectStorage } from '@/lib/api/storage-api'
+import * as storageService from '@/lib/services/storage-service'
 import { supabase } from '@/lib/supabase/client'
+import { getSession, isSessionValid } from '@/lib/supabase/auth'
 import { toast } from 'sonner'
+import { CONTENT_SAVE_DEBOUNCE_MS, LOAD_TIMEOUT_MS } from '@/lib/constants/context-save'
+import {
+  DataLoadError,
+  DataLoadTimeoutError,
+  DataMigrationError,
+  ContentSaveError,
+  ProjectsSaveError,
+  ProjectUpdateError,
+  ProjectDeleteError,
+  ProjectStorageDeleteError,
+  reportError,
+} from '@/lib/errors'
 
-/**
- * Przy Supabase lista i zapis projektów odbywa się przez createProject / updateProject / deleteProject.
- * addProject i saveProjects służą wyłącznie fallbackowi Express.
- */
-interface PortfolioContextValue {
+/** Kontekst treści (content) – zmiana projects nie powoduje przerenderu konsumentów. */
+export interface ContentContextValue {
   content: ContentData
   setContent: (content: ContentData | ((prev: ContentData) => ContentData)) => void
-  /** Ustawia treść tylko w stanie (bez zapisu). Używane np. po zapisie z formularza admina, żeby zaktualizować widok bez ponownego zapisu. */
+  /** Ustawia treść tylko w stanie (bez zapisu). Używane np. po zapisie z formularza admina. */
   replaceContent: (content: ContentData) => void
-  projects: Project[]
-  projectFilters: string[]
-  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void
-  /** Przy Supabase no-op – nowe projekty tworz przez createProject. Dla Express: dodaje projekt do listy i zapisuje. */
-  addProject: (project: Omit<Project, 'id'> | Project) => void
-  createProject: (payload?: Partial<Project>) => Promise<Project>
-  updateProject: (id: number, patch: Partial<Project>) => Promise<void>
-  deleteProject: (id: number) => void
   loading: boolean
   error: string | null
 }
 
-const PortfolioContext = createContext<PortfolioContextValue | null>(null)
+/** Kontekst projektów – zmiana content nie powoduje przerenderu konsumentów. */
+export interface ProjectsContextValue {
+  projects: Project[]
+  projectFilters: string[]
+  setProjects: (projects: Project[] | ((prev: Project[]) => Project[])) => void
+  /** Przy Supabase no-op – nowe projekty tworz przez createProject. */
+  addProject: (project: Omit<Project, 'id'> | Project) => void
+  createProject: (payload?: Partial<Project>) => Promise<Project>
+  updateProject: (id: number, patch: Partial<Project>) => Promise<Project>
+  deleteProject: (id: number) => void
+  loading: boolean
+  error: string | null
+  /** True gdy backend to Supabase – zapis listy wymaga wywołań updateProject, nie tylko setProjects. */
+  useSupabase: boolean
+}
+
+const ContentContext = createContext<ContentContextValue | null>(null)
+const ProjectsContext = createContext<ProjectsContextValue | null>(null)
 
 export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [content, setContentState] = useState<ContentData>(DEFAULT_CONTENT)
   const [projects, setProjectsState] = useState<Project[]>(defaultProjects)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const lastSavedContentRef = useRef<ContentData | null>(null)
+  const lastSavedProjectsRef = useRef<Project[] | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -58,15 +80,11 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       try {
         const content = migrateContentCourses(contentData)
         const projects = migrateProjectsOrder(projectsData)
-        if (content !== contentData) {
-          contentService.saveContent(content).catch(() => {})
-        }
-        if (projects !== projectsData && !supabase) {
-          projectsService.saveProjects(projects).catch(() => {})
-        }
         return { content, projects }
       } catch (err) {
-        console.error('Error in applyMigrationsAndSave:', err)
+        reportError(new DataMigrationError('applyMigrationsAndSave', err), {
+          context: 'applyMigrationsAndSave',
+        })
         return { content: contentData, projects: projectsData }
       }
     }
@@ -79,11 +97,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         setProjectsState(projects)
         setError(errMessage)
       } catch (err) {
-        console.error('Error applying migrations:', err)
+        const msg = reportError(new DataMigrationError('onLoaded migrations', err), {
+          context: 'onLoaded_migrations',
+        })
         if (!cancelled) {
           setContentState(migrateContentCourses(DEFAULT_CONTENT))
           setProjectsState(migrateProjectsOrder(defaultProjects))
-          setError('Błąd podczas przetwarzania danych')
+          setError(msg)
         }
       }
     }
@@ -103,8 +123,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           finishLoading()
           return
         }
-
-        const LOAD_TIMEOUT_MS = 10000
 
         // Przy skonfigurowanym Supabase lista projektów jest ładowana wyłącznie z tabeli `projects` (projectsRepository.list()).
         Promise.all([
@@ -126,26 +144,32 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
               clearTimeout(timeoutId)
               timeoutId = null
             }
-            console.error('Error loading data:', err)
+            const msg = reportError(new DataLoadError('loadData', err), {
+              context: 'loadData',
+            })
             setContentState(migrateContentCourses(DEFAULT_CONTENT))
             setProjectsState(migrateProjectsOrder(defaultProjects))
-            setError('Brak danych, nie połączono z bazą')
+            setError(msg)
             finishLoading()
           })
 
         timeoutId = setTimeout(() => {
           if (!cancelled) {
+            const msg = reportError(new DataLoadTimeoutError('Timeout podczas ładowania danych'), {
+              context: 'loadData_timeout',
+            })
             setContentState(migrateContentCourses(DEFAULT_CONTENT))
             setProjectsState(migrateProjectsOrder(defaultProjects))
-            setError('Timeout podczas ładowania danych')
+            setError(msg)
             finishLoading()
           }
         }, LOAD_TIMEOUT_MS)
-      } catch (_err) {
+      } catch (err) {
         if (!cancelled) {
+          const msg = reportError(err, { context: 'loadData_sync' })
           setContentState(migrateContentCourses(DEFAULT_CONTENT))
           setProjectsState(migrateProjectsOrder(defaultProjects))
-          setError('Nieoczekiwany błąd podczas inicjalizacji')
+          setError(msg)
           finishLoading()
         }
       }
@@ -164,13 +188,72 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (lastSavedContentRef.current === null) {
+      lastSavedContentRef.current = content
+      return
+    }
+    if (content === lastSavedContentRef.current) {
+      return
+    }
+    let cancelled = false
+    const timeoutId = setTimeout(async () => {
+      const { data: { session } } = await getSession()
+      if (cancelled || !session || !isSessionValid(session)) return
+      contentService
+        .saveContent(content)
+        .then(() => {
+          if (!cancelled) lastSavedContentRef.current = content
+        })
+        .catch((err) => {
+          if (cancelled) return
+          const msg = reportError(new ContentSaveError('saveContent', err), {
+            context: 'content_save',
+          })
+          toast.error(msg)
+        })
+    }, CONTENT_SAVE_DEBOUNCE_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
+  }, [content])
+
+  useEffect(() => {
+    if (lastSavedProjectsRef.current === null) {
+      lastSavedProjectsRef.current = projects
+      return
+    }
+    if (projects === lastSavedProjectsRef.current) {
+      return
+    }
+    let cancelled = false
+    const timeoutId = setTimeout(async () => {
+      const { data: { session } } = await getSession()
+      if (cancelled || !session || !isSessionValid(session)) return
+      projectsService
+        .saveProjects(projects)
+        .then(() => {
+          if (!cancelled) lastSavedProjectsRef.current = projects
+        })
+        .catch((err) => {
+          if (cancelled) return
+          const msg = reportError(new ProjectsSaveError('saveProjects', err), {
+            context: 'projects_save',
+          })
+          toast.error(msg)
+        })
+    }, CONTENT_SAVE_DEBOUNCE_MS)
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
+  }, [projects])
+
   const setContent = useCallback(
     (value: ContentData | ((prev: ContentData) => ContentData)) => {
       setContentState((prev) => {
         const next = typeof value === 'function' ? value(prev) : value
-        contentService.saveContent(next).catch(() => {
-          toast.error('Zapis do pliku nie powiódł się, dane tylko w tej sesji.')
-        })
         return next
       })
     },
@@ -178,6 +261,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   )
 
   const replaceContent = useCallback((content: ContentData) => {
+    lastSavedContentRef.current = content
     setContentState(content)
   }, [])
 
@@ -185,11 +269,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     (value: Project[] | ((prev: Project[]) => Project[])) => {
       setProjectsState((prev) => {
         const next = typeof value === 'function' ? value(prev) : value
-        if (!supabase) {
-          projectsService.saveProjects(next).catch(() => {
-            toast.error('Zapis do pliku nie powiódł się, dane tylko w tej sesji.')
-          })
-        }
         return next
       })
     },
@@ -220,17 +299,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
             ? project.order
             : maxOrder + 1,
         } as Project
-        const next = [...prev, newProject]
-        projectsService.saveProjects(next).catch(() => {
-          toast.error('Zapis do pliku nie powiódł się, dane tylko w tej sesji.')
-        })
-        return next
+        return [...prev, newProject]
       })
     },
     []
   )
 
-  const updateProject = useCallback((id: number, patch: Partial<Project>): Promise<void> => {
+  const updateProject = useCallback((id: number, patch: Partial<Project>): Promise<Project> => {
     if (supabase) {
       return projectsService
         .updateProject(id, patch)
@@ -238,23 +313,29 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           setProjectsState((prev) =>
             prev.map((p) => (p.id === id ? updated : p))
           )
+          return updated
         })
-        .catch(() => {
-          toast.error('Nie udało się zapisać projektu.')
-          throw new Error('Update failed')
+        .catch((err) => {
+          const msg = reportError(new ProjectUpdateError('updateProject', err), {
+            context: 'update_project',
+          })
+          toast.error(msg)
+          throw new ProjectUpdateError('Update failed', err)
         })
     }
+    let updated: Project | undefined
     setProjectsState((prev) => {
       const index = prev.findIndex((p) => p.id === id)
       if (index === -1) return prev
       const next = [...prev]
-      next[index] = { ...next[index], ...patch }
-      projectsService.saveProjects(next).catch(() => {
-        toast.error('Zapis do pliku nie powiódł się, dane tylko w tej sesji.')
-      })
+      updated = { ...next[index], ...patch } as Project
+      next[index] = updated
       return next
     })
-    return Promise.resolve()
+    if (updated === undefined) {
+      return Promise.reject(new Error('Project not found'))
+    }
+    return Promise.resolve(updated)
   }, [])
 
   const deleteProject = useCallback((id: number) => {
@@ -262,24 +343,36 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       setProjectsState((prev) => prev.filter((p) => p.id !== id))
     }
     if (supabase) {
-      deleteProjectStorage(id)
-        .catch(() => {})
-        .then(() => projectsService.deleteProject(id))
-        .then(removeFromState)
-        .catch(() => {
-          toast.error('Nie udało się usunąć projektu.')
-        })
+      storageService.deleteProjectStorage(id).then(
+        () =>
+          projectsService
+            .deleteProject(id)
+            .then(removeFromState)
+            .catch((err) => {
+              const msg = reportError(new ProjectDeleteError('deleteProject', err), {
+                context: 'delete_project',
+              })
+              toast.error(msg)
+            }),
+        (err) => {
+          const msg = reportError(new ProjectStorageDeleteError('deleteProjectStorage', err), {
+            context: 'delete_project_storage',
+          })
+          toast.error(msg)
+        }
+      )
       return
     }
-    deleteProjectStorage(id).finally(() => {
-      setProjectsState((prev) => {
-        const next = prev.filter((p) => p.id !== id)
-        projectsService.saveProjects(next).catch(() => {
-          toast.error('Zapis do pliku nie powiódł się, dane tylko w tej sesji.')
-        })
-        return next
+    storageService.deleteProjectStorage(id)
+      .then(() => {
+        setProjectsState((prev) => prev.filter((p) => p.id !== id))
       })
-    })
+      .catch((err) => {
+        const msg = reportError(new ProjectStorageDeleteError('deleteProjectStorage', err), {
+          context: 'delete_project_storage_fallback',
+        })
+        toast.error(msg)
+      })
   }, [])
 
   const projectFilters = useMemo(
@@ -287,25 +380,21 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     [projects]
   )
 
-  const value = useMemo<PortfolioContextValue>(
+  const useSupabase = Boolean(supabase)
+
+  const contentValue = useMemo<ContentContextValue>(
     () => ({
       content,
       setContent,
       replaceContent,
-      projects,
-      projectFilters,
-      setProjects,
-      addProject,
-      createProject,
-      updateProject,
-      deleteProject,
       loading,
       error,
     }),
-    [
-      content,
-      setContent,
-      replaceContent,
+    [content, setContent, replaceContent, loading, error]
+  )
+
+  const projectsValue = useMemo<ProjectsContextValue>(
+    () => ({
       projects,
       projectFilters,
       setProjects,
@@ -315,20 +404,50 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       deleteProject,
       loading,
       error,
+      useSupabase,
+    }),
+    [
+      projects,
+      projectFilters,
+      setProjects,
+      addProject,
+      createProject,
+      updateProject,
+      deleteProject,
+      loading,
+      error,
+      useSupabase,
     ]
   )
 
   return (
-    <PortfolioContext.Provider value={value}>
-      {children}
-    </PortfolioContext.Provider>
+    <ContentContext.Provider value={contentValue}>
+      <ProjectsContext.Provider value={projectsValue}>
+        {children}
+      </ProjectsContext.Provider>
+    </ContentContext.Provider>
   )
 }
 
-export function usePortfolio(): PortfolioContextValue {
-  const ctx = useContext(PortfolioContext)
+export function useContent(): ContentContextValue {
+  const ctx = useContext(ContentContext)
   if (!ctx) {
-    throw new Error('usePortfolio must be used within PortfolioProvider')
+    throw new Error('useContent must be used within PortfolioProvider')
   }
   return ctx
+}
+
+export function useProjects(): ProjectsContextValue {
+  const ctx = useContext(ProjectsContext)
+  if (!ctx) {
+    throw new Error('useProjects must be used within PortfolioProvider')
+  }
+  return ctx
+}
+
+/** Łączy useContent i useProjects – dla komponentów potrzebujących obu (np. HomePage, ProjectsSection). */
+export function usePortfolio(): ContentContextValue & ProjectsContextValue {
+  const content = useContent()
+  const projects = useProjects()
+  return { ...content, ...projects }
 }

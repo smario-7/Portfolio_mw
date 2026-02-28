@@ -1,4 +1,5 @@
 import profanityListData from '@/lib/data/profanity-list.json'
+import { ProfanityListLoadError, reportError } from '@/lib/errors'
 
 let cachedProfanityList: string[] | null = null
 
@@ -12,9 +13,9 @@ export function loadProfanityList(): string[] {
     cachedProfanityList = Array.isArray(data.words) ? data.words : []
     return cachedProfanityList
   } catch (error) {
-    if (import.meta.env.DEV) {
-      console.error('Błąd wczytywania listy niecenzuralnych słów:', error)
-    }
+    reportError(new ProfanityListLoadError('loadProfanityList', error), {
+      context: 'profanity_list_load',
+    })
     cachedProfanityList = []
     return []
   }

@@ -1,3 +1,5 @@
+import type { AttachmentType, ProjectAttachment } from '@/lib/types/project'
+
 /** Załączniki projektu: PDF, notebooki, Markdown, skrypty Python. */
 export const ALLOWED_ATTACHMENT_EXTENSIONS = ['.pdf', '.ipynb', '.md', '.py'] as const
 
@@ -24,4 +26,18 @@ export function isValidImageFile(filename: string): boolean {
 
 export function getAttachmentAcceptString(): string {
   return '.pdf,.ipynb,.md,.py,application/pdf,text/x-python'
+}
+
+export function getAttachmentTypeFromPath(path: string): AttachmentType {
+  const lower = path.toLowerCase()
+  if (lower.endsWith('.pdf')) return 'pdf'
+  if (lower.endsWith('.ipynb')) return 'ipynb'
+  if (lower.endsWith('.md')) return 'md'
+  if (lower.endsWith('.py')) return 'py'
+  return 'pdf'
+}
+
+export function pathToAttachment(path: string): ProjectAttachment {
+  const label = path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path
+  return { path, label, type: getAttachmentTypeFromPath(path) }
 }

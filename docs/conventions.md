@@ -1,6 +1,6 @@
 # Konwencje projektu
 
-Obowiązujące w całym projekcie zasady nazewnictwa oraz komentarzy w kodzie.
+Obowiązujące w całym projekcie zasady nazewnictwa oraz komentarzy w kodzie. Architektura warstw, obsługa błędów i konwencja tras: [docs/architecture.md](architecture.md).
 
 ---
 

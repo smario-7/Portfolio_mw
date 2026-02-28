@@ -8,6 +8,7 @@ interface ProjectEditStackProps {
   setTechInput: React.Dispatch<React.SetStateAction<string>>
   onAddTechnology: () => void
   onRemoveTechnology: (tech: string) => void
+  error?: string
 }
 
 export function ProjectEditStack({
@@ -16,6 +17,7 @@ export function ProjectEditStack({
   setTechInput,
   onAddTechnology,
   onRemoveTechnology,
+  error,
 }: ProjectEditStackProps) {
   return (
     <AdminSectionCard title="Stack">
@@ -52,6 +54,7 @@ export function ProjectEditStack({
           </span>
         ))}
       </div>
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
     </AdminSectionCard>
   )
 }

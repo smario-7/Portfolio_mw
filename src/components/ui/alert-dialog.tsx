@@ -93,11 +93,13 @@ function AlertDialogFooter({
 
 function AlertDialogTitle({
   className,
+  key,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title> & { key?: React.Key }) {
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
+      key={key}
       className={cn('text-lg font-semibold', className)}
       {...props}
     />
@@ -106,11 +108,13 @@ function AlertDialogTitle({
 
 function AlertDialogDescription({
   className,
+  key,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description> & { key?: React.Key }) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
+      key={key}
       className={cn('text-muted-foreground text-sm', className)}
       {...props}
     />
@@ -119,10 +123,12 @@ function AlertDialogDescription({
 
 function AlertDialogAction({
   className,
+  key,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action> & { key?: React.Key }) {
   return (
     <AlertDialogPrimitive.Action
+      key={key}
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -131,10 +137,12 @@ function AlertDialogAction({
 
 function AlertDialogCancel({
   className,
+  key,
   ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel> & { key?: React.Key }) {
   return (
     <AlertDialogPrimitive.Cancel
+      key={key}
       className={cn(buttonVariants({ variant: 'outline' }), className)}
       {...props}
     />

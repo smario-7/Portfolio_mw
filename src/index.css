@@ -164,6 +164,7 @@
   }
 
   .tablet-scene {
+    position: relative;
     perspective: 2000px;
     perspective-origin: center center;
     width: 100vw;
@@ -259,6 +260,19 @@
     transition: transform 0.35s ease-out, opacity 0.25s, filter 0.35s ease-out;
   }
 
+  .tablet-screen-reflection {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    border-radius: inherit;
+    transition: opacity 450ms ease-out;
+    background-image:
+      linear-gradient(165deg, rgba(255, 255, 255, 0.12) 0%, transparent 35%),
+      linear-gradient(45deg, transparent 50%, rgba(200, 220, 255, 0.09) 70%, transparent 90%),
+      radial-gradient(ellipse 80% 40% at 70% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+  }
+
   .tablet-container::-webkit-scrollbar,
   .scrollbar-tablet::-webkit-scrollbar {
     width: 8px;
@@ -327,4 +341,58 @@
       border-radius: 12px 12px 0 0;
     }
   }
+
+  .full-description-markdown p.empty-line {
+    margin: 0;
+    min-height: 1em;
+  }
+
+  .full-description-markdown ul + p.empty-line,
+  .full-description-markdown ol + p.empty-line {
+    margin: 0;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .full-description-markdown ul li p,
+  .full-description-markdown ol li p {
+    margin: 0;
+  }
+
+  .full-description-markdown ul li,
+  .full-description-markdown ol li {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+/* Listy: zerowanie marginesów wewnątrz <li> (nadpisuje my-3 z komponentu p) */
+.full-description-markdown .list-item-inner {
+  display: contents;
+}
+.full-description-markdown .list-item-inner p {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Line-aware: odstępy tylko od <br/>, bez marginesów bloków; listy bez odstępów między punktami */
+.line-aware-markdown p,
+.line-aware-markdown ul,
+.line-aware-markdown ol,
+.line-aware-markdown h1,
+.line-aware-markdown h2,
+.line-aware-markdown h3,
+.line-aware-markdown h4,
+.line-aware-markdown h5,
+.line-aware-markdown h6 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.line-aware-markdown ul li,
+.line-aware-markdown ol li {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: inherit;
 }

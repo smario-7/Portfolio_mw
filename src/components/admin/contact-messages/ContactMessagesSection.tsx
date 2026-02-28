@@ -17,12 +17,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  getContactMessages,
-  deleteContactMessage,
-  deleteContactMessages,
-} from '@/lib/api/contact-messages-api'
+import * as contactMessagesService from '@/lib/services/contact-messages-service'
 import type { ContactMessage } from '@/lib/types'
+import { ContactMessagesLoadError, ContactMessageDeleteError, reportError } from '@/lib/errors'
 
 function formatDateTime(value: string | null): string {
   if (value == null) return '—'
@@ -43,11 +40,14 @@ export function ContactMessagesSection() {
 
   const load = useCallback(() => {
     setLoading(true)
-    getContactMessages()
+    contactMessagesService.getContactMessages()
       .then(setMessages)
-      .catch(() => {
+      .catch((err) => {
+        const msg = reportError(new ContactMessagesLoadError('getContactMessages', err), {
+          context: 'contact_messages_load',
+        })
         setMessages([])
-        toast.error('Nie udało się załadować wiadomości')
+        toast.error(msg)
       })
       .finally(() => setLoading(false))
   }, [])
@@ -82,7 +82,7 @@ export function ContactMessagesSection() {
   const handleConfirmDelete = async () => {
     if (deleteId == null) return
     try {
-      await deleteContactMessage(deleteId)
+      await contactMessagesService.deleteContactMessage(deleteId)
       setDeleteId(null)
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -92,9 +92,11 @@ export function ContactMessagesSection() {
       load()
       toast.success('Wiadomość usunięta')
     } catch (error) {
-      console.error('Błąd podczas usuwania wiadomości:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd'
-      toast.error(`Nie udało się usunąć wiadomości: ${errorMessage}`)
+      const msg = reportError(
+        new ContactMessageDeleteError('deleteContactMessage', error),
+        { context: 'contact_messages_delete_one' }
+      )
+      toast.error(msg)
     }
   }
 
@@ -102,15 +104,17 @@ export function ContactMessagesSection() {
     const ids = [...selectedIds]
     if (ids.length === 0) return
     try {
-      await deleteContactMessages(ids)
+      await contactMessagesService.deleteContactMessages(ids)
       setSelectedIds(new Set())
       setShowBulkDelete(false)
       load()
       toast.success(`Usunięto ${ids.length} wiadomości`)
     } catch (error) {
-      console.error('Błąd podczas zbiorczego usuwania wiadomości:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd'
-      toast.error(`Nie udało się usunąć wiadomości: ${errorMessage}`)
+      const msg = reportError(
+        new ContactMessageDeleteError('deleteContactMessages bulk', error),
+        { context: 'contact_messages_bulk_delete' }
+      )
+      toast.error(msg)
     }
   }
 

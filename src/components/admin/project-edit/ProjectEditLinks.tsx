@@ -1,77 +1,38 @@
+import { Download, FileCode, FileText } from 'lucide-react'
 import type { ProjectAttachment } from '@/lib/types'
 import type { ProjectFormData } from '@/lib/validation/project-validation'
 import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 
-const EMPTY = ''
+interface ProjectEditLinksFieldErrors {
+  githubUrl?: string
+  demoUrl?: string
+}
 
 interface ProjectEditLinksProps {
   formData: ProjectFormData
   setFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>
+  attachmentPool: ProjectAttachment[]
   existingAttachments: ProjectAttachment[]
-  existingImagePaths: string[]
+  onAttachmentToggle: (path: string) => void
+  fieldErrors?: ProjectEditLinksFieldErrors
 }
 
-function SelectRow({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value: string
-  options: { value: string; label: string }[]
-  onChange: (path: string) => void
-}) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-medium text-foreground">{label}</label>
-      <select
-        value={value || EMPTY}
-        onChange={(e) => onChange(e.target.value === EMPTY ? '' : e.target.value)}
-        className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
-      >
-        <option value={EMPTY}>— Nie pokazuj —</option>
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  )
+function AttachmentIcon({ type }: { type?: ProjectAttachment['type'] }) {
+  if (type === 'ipynb' || type === 'py') return <FileCode className="h-4 w-4 shrink-0" />
+  if (type === 'md') return <FileText className="h-4 w-4 shrink-0" />
+  return <Download className="h-4 w-4 shrink-0" />
 }
 
 export function ProjectEditLinks({
   formData,
   setFormData,
+  attachmentPool,
   existingAttachments,
-  existingImagePaths,
+  onAttachmentToggle,
+  fieldErrors,
 }: ProjectEditLinksProps) {
-  const dl = formData.downloadLinks ?? {}
-
-  const setDownloadLink = (key: keyof typeof dl, path: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      downloadLinks: {
-        ...(prev.downloadLinks ?? {}),
-        [key]: path || undefined,
-      },
-    }))
-  }
-
-  const pdfOptions = existingAttachments
-    .filter((a) => a.type === 'pdf')
-    .map((a) => ({ value: a.path, label: a.label }))
-  const ipynbOptions = existingAttachments
-    .filter((a) => a.type === 'ipynb')
-    .map((a) => ({ value: a.path, label: a.label }))
-  const mdOptions = existingAttachments
-    .filter((a) => a.type === 'md')
-    .map((a) => ({ value: a.path, label: a.label }))
-  const imageOptions = existingImagePaths.map((path) => ({
-    value: path,
-    label: path.split('/').pop() ?? path,
-  }))
+  const isSelected = (path: string) =>
+    existingAttachments.some((a) => a.path === path)
 
   return (
     <AdminSectionCard title="Linki">
@@ -87,6 +48,9 @@ export function ProjectEditLinks({
             placeholder="https://github.com/..."
             className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
           />
+          {fieldErrors?.githubUrl && (
+            <p className="mt-1.5 text-sm text-destructive">{fieldErrors.githubUrl}</p>
+          )}
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium text-foreground">Demo</label>
@@ -99,41 +63,40 @@ export function ProjectEditLinks({
             placeholder="https://demo.example.com"
             className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
           />
+          {fieldErrors?.demoUrl && (
+            <p className="mt-1.5 text-sm text-destructive">{fieldErrors.demoUrl}</p>
+          )}
         </div>
       </div>
 
-      <div className="mt-6 border-t border-border pt-6">
-        <h3 className="mb-3 text-sm font-medium text-foreground">Przyciski pobierania</h3>
-        <p className="mb-4 text-xs text-muted-foreground">
-          Wybrane pliki pojawią się jako przyciski obok GitHub i Demo na stronie projektu.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <SelectRow
-            label="PDF"
-            value={dl.pdf ?? ''}
-            options={pdfOptions}
-            onChange={(path) => setDownloadLink('pdf', path)}
-          />
-          <SelectRow
-            label="Jupyter (.ipynb)"
-            value={dl.ipynb ?? ''}
-            options={ipynbOptions}
-            onChange={(path) => setDownloadLink('ipynb', path)}
-          />
-          <SelectRow
-            label="Markdown (.md)"
-            value={dl.md ?? ''}
-            options={mdOptions}
-            onChange={(path) => setDownloadLink('md', path)}
-          />
-          <SelectRow
-            label="Obraz"
-            value={dl.image ?? ''}
-            options={imageOptions}
-            onChange={(path) => setDownloadLink('image', path)}
-          />
+      {attachmentPool.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <h3 className="text-sm font-medium text-foreground">
+            Pliki do pobierania na tablecie
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Zaznacz pliki, które mają być dostępne do pobrania w widoku projektu na tablecie.
+          </p>
+          <ul className="space-y-2">
+            {attachmentPool.map((item) => (
+              <li key={item.path}>
+                <label className="flex cursor-pointer items-center gap-3 rounded-lg border-2 border-border bg-background/50 px-4 py-2 hover:bg-background/80">
+                  <input
+                    type="checkbox"
+                    checked={isSelected(item.path)}
+                    onChange={() => onAttachmentToggle(item.path)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  <AttachmentIcon type={item.type} />
+                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                    {item.label}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
+      )}
     </AdminSectionCard>
   )
 }

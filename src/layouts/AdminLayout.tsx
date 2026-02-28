@@ -1,5 +1,6 @@
 import { Outlet, useLocation, Navigate } from 'react-router-dom'
 import { Sidebar } from '@/components/admin/Sidebar'
+import { ADMIN_LOGIN, ADMIN_DASHBOARD } from '@/lib/constants/routes'
 import { ADMIN_MAIN_PADDING_CLASS } from '@/lib/constants/layout'
 import { useAdminSession } from '@/hooks/use-admin-session'
 
@@ -15,12 +16,12 @@ export default function AdminLayout() {
     )
   }
 
-  const isLoginPage = pathname === '/admin/login'
+  const isLoginPage = pathname === ADMIN_LOGIN
   if (!session && !isLoginPage) {
-    return <Navigate to="/admin/login" replace />
+    return <Navigate to={ADMIN_LOGIN} replace />
   }
   if (session && isLoginPage) {
-    return <Navigate to="/admin/dashboard" replace />
+    return <Navigate to={ADMIN_DASHBOARD} replace />
   }
   if (isLoginPage) {
     return <Outlet />

@@ -5,8 +5,10 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { getAllPageViews, deletePageViewIds, type PageViewRecord } from '@/lib/api/page-views-api'
+import * as pageViewsService from '@/lib/services/page-views-service'
+import type { PageViewRecord } from '@/lib/services/page-views-service'
 import { toast } from 'sonner'
+import { PageViewsLoadError, PageViewsDeleteError, reportError } from '@/lib/errors'
 import { cn } from '@/lib/utils'
 
 interface VisitsResetSectionProps {
@@ -36,11 +38,14 @@ export function VisitsResetSection({ page = 'home', onDeleted }: VisitsResetSect
 
   const load = useCallback(() => {
     setLoading(true)
-    getAllPageViews(page)
+    pageViewsService.getAllPageViews(page)
       .then(setRecords)
-      .catch(() => {
+      .catch((err) => {
+        const msg = reportError(new PageViewsLoadError('getAllPageViews', err), {
+          context: 'visits_reset_load',
+        })
         setRecords([])
-        toast.error('Nie udało się załadować listy odwiedzin')
+        toast.error(msg)
       })
       .finally(() => setLoading(false))
   }, [page])
@@ -83,14 +88,19 @@ export function VisitsResetSection({ page = 'home', onDeleted }: VisitsResetSect
       return
     }
     setDeleting(true)
-    deletePageViewIds(ids)
+    pageViewsService.deletePageViewIds(ids)
       .then(() => {
         setSelectedIds(new Set())
         load()
         onDeleted?.()
         toast.success('Usunięto wybrane wpisy')
       })
-      .catch(() => toast.error('Nie udało się usunąć wpisów'))
+      .catch((err) => {
+        const msg = reportError(new PageViewsDeleteError('deletePageViewIds', err), {
+          context: 'visits_reset_delete',
+        })
+        toast.error(msg)
+      })
       .finally(() => setDeleting(false))
   }
 

@@ -1,20 +1,23 @@
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import remarkBreaks from 'remark-breaks'
-import { markdownComponents } from './MarkdownComponents'
-import { cn } from '@/lib/utils'
+import { LineAwareMarkdown } from './line-aware-markdown'
+
+function normalizeLineEndings(text: string): string {
+  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+}
 
 interface MarkdownContentProps {
   content: string
   className?: string
 }
 
+/**
+ * Renderuje markdown z 1:1 odwzorowaniem \n (każdy enter = jeden łam),
+ * bez dodatkowych łamów wewnątrz list.
+ */
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
   return (
-    <div className={cn('prose prose-invert max-w-none', className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={markdownComponents}>
-        {content}
-      </ReactMarkdown>
-    </div>
+    <LineAwareMarkdown
+      content={normalizeLineEndings(content)}
+      className={className}
+    />
   )
 }

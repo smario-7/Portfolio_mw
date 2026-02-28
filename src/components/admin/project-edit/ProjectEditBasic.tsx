@@ -18,6 +18,11 @@ import { ColorPickerModal } from '@/components/admin/ColorPickerModal'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
+interface ProjectEditBasicFieldErrors {
+  title?: string
+  shortDescription?: string
+}
+
 interface ProjectEditBasicProps {
   formData: ProjectFormData
   setFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>
@@ -25,6 +30,7 @@ interface ProjectEditBasicProps {
   existingImagePaths?: string[]
   onImageUpload?: (file: File) => Promise<string>
   onImageDelete?: (path: string) => Promise<void>
+  fieldErrors?: ProjectEditBasicFieldErrors
 }
 
 export function ProjectEditBasic({
@@ -34,6 +40,7 @@ export function ProjectEditBasic({
   existingImagePaths = [],
   onImageUpload,
   onImageDelete,
+  fieldErrors,
 }: ProjectEditBasicProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
@@ -98,6 +105,9 @@ export function ProjectEditBasic({
             className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
             required
           />
+          {fieldErrors?.title && (
+            <p className="mt-1.5 text-sm text-destructive">{fieldErrors.title}</p>
+          )}
         </div>
         <div>
           <label className="mb-2 block text-sm font-medium text-foreground">
@@ -152,15 +162,18 @@ export function ProjectEditBasic({
           <label className="mb-2 block text-sm font-medium text-foreground">
             Krótki opis *
           </label>
-          <input
-            type="text"
+          <textarea
+            rows={4}
             value={formData.shortDescription}
             onChange={(e) =>
               setFormData({ ...formData, shortDescription: e.target.value })
             }
-            className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none"
+            className="w-full rounded-lg border-2 border-border bg-background px-4 py-2 text-foreground focus:border-primary focus:outline-none resize-y min-h-[6rem]"
             required
           />
+          {fieldErrors?.shortDescription && (
+            <p className="mt-1.5 text-sm text-destructive">{fieldErrors.shortDescription}</p>
+          )}
         </div>
         <div className="space-y-3">
           <label className="mb-2 block text-sm font-medium text-foreground">

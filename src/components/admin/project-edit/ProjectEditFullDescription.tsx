@@ -42,6 +42,8 @@ interface SortableBlockRowProps {
   projectId: number
   existingAttachments: ProjectAttachment[]
   existingImagePaths: string[]
+  onStorageImageDeleted?: (path: string) => void
+  onStorageImageUploaded?: (path: string) => void
   blockError?: string
   onUpdate: (index: number, block: ProjectDetailBlock) => void
   onRemove: (index: number) => void
@@ -54,6 +56,8 @@ function SortableBlockRow({
   projectId,
   existingAttachments,
   existingImagePaths,
+  onStorageImageDeleted,
+  onStorageImageUploaded,
   blockError,
   onUpdate,
   onRemove,
@@ -115,6 +119,8 @@ function SortableBlockRow({
               onChange={(next) => onUpdate(index, next)}
               existingImagePaths={existingImagePaths}
               onRemoveBlock={() => onRemove(index)}
+              onStorageImageDeleted={onStorageImageDeleted}
+              onStorageImageUploaded={onStorageImageUploaded}
             />
           </>
         )}
@@ -156,6 +162,8 @@ interface ProjectEditFullDescriptionProps {
   updateBlock: (index: number, block: ProjectDetailBlock) => void
   existingAttachments: ProjectAttachment[]
   existingImagePaths?: string[]
+  onStorageImageDeleted?: (path: string) => void
+  onStorageImageUploaded?: (path: string) => void
   blockErrors?: Record<number, string>
 }
 
@@ -168,6 +176,8 @@ export function ProjectEditFullDescription({
   updateBlock,
   existingAttachments,
   existingImagePaths = [],
+  onStorageImageDeleted,
+  onStorageImageUploaded,
   blockErrors = {},
 }: ProjectEditFullDescriptionProps) {
   const sensors = useSensors(
@@ -212,6 +222,8 @@ export function ProjectEditFullDescription({
                 projectId={projectId}
                 existingAttachments={existingAttachments}
                 existingImagePaths={existingImagePaths}
+                onStorageImageDeleted={onStorageImageDeleted}
+                onStorageImageUploaded={onStorageImageUploaded}
                 blockError={blockErrors[index]}
                 onUpdate={updateBlock}
                 onRemove={removeBlock}

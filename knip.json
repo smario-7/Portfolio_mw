@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "src/App.tsx",
+    "src/**/*.test.{ts,tsx}",
+    "src/**/*.spec.{ts,tsx}"
+  ],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignoreFiles": ["src/vite-env.d.ts"],
+  "ignoreDependencies": ["tailwindcss-animate", "tw-animate-css"]
+}

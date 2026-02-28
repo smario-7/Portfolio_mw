@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { BlockCode, ProjectAttachment } from '@/lib/types'
 import { getStorageFileUrl } from '@/lib/utils/storage-url'
-import { getFragmentFromPy, getFragmentFromIpynb } from '@/lib/parsers/code-fragment'
+import { getIpynbCellSummaries, type IpynbCellSummary } from '@/lib/parsers/ipynb'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import { IpynbCellSelector } from '@/components/admin/project-edit/IpynbCellSelector'
 import { Button } from '@/components/ui/button'
+import { CodeFragmentLoadError, reportError } from '@/lib/errors'
 
 interface BlockCodeEditorProps {
   block: BlockCode
@@ -20,26 +22,6 @@ interface BlockCodeEditorProps {
 const codeFiles = (attachments: ProjectAttachment[]) =>
   attachments.filter((a) => a.path.endsWith('.py') || a.path.endsWith('.ipynb'))
 
-interface IpynbCell {
-  cell_type?: string
-  source?: string[] | string
-}
-
-function parseIpynbCells(rawJson: string): string[] {
-  try {
-    const data = JSON.parse(rawJson) as { cells?: IpynbCell[] }
-    const cells = data.cells ?? []
-    return cells.map((cell) => {
-      const raw = cell.source
-      if (Array.isArray(raw)) return raw.join('')
-      if (typeof raw === 'string') return raw
-      return ''
-    })
-  } catch {
-    return []
-  }
-}
-
 export function BlockCodeEditor({
   block,
   onChange,
@@ -50,7 +32,7 @@ export function BlockCodeEditor({
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [pyLineCount, setPyLineCount] = useState(0)
-  const [ipynbCells, setIpynbCells] = useState<string[]>([])
+  const [ipynbCellSummaries, setIpynbCellSummaries] = useState<IpynbCellSummary[]>([])
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
   const [selectedCells, setSelectedCells] = useState<Set<number>>(new Set())
@@ -64,25 +46,31 @@ export function BlockCodeEditor({
       setFileContent(null)
       setLoadError(false)
       setPyLineCount(0)
-      setIpynbCells([])
+      setIpynbCellSummaries([])
       return
     }
     const url = getStorageFileUrl(sourceFile)
     setLoadError(false)
     fetch(url)
       .then((res) => {
-        if (!res.ok) throw new Error('Fetch failed')
+        if (!res.ok) {
+          throw new CodeFragmentLoadError(`Fetch failed: ${res.status}`, undefined)
+        }
         return res.text()
       })
       .then((raw) => {
         setFileContent(raw)
         if (sourceFile.endsWith('.ipynb')) {
-          setIpynbCells(parseIpynbCells(raw))
+          setIpynbCellSummaries(getIpynbCellSummaries(raw))
         } else {
+          setIpynbCellSummaries([])
           setPyLineCount(raw.split(/\r?\n/).length)
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        reportError(new CodeFragmentLoadError(sourceFile, err), {
+          context: 'block_code_editor_fetch',
+        })
         setLoadError(true)
         setFileContent(null)
       })
@@ -161,13 +149,6 @@ export function BlockCodeEditor({
     onChange({ ...block, fragmentId: parts.join(',') })
   }
 
-  const previewFragment =
-    fileContent && sourceFile
-      ? isIpynb
-        ? getFragmentFromIpynb(fileContent, block.fragmentId)
-        : getFragmentFromPy(fileContent, block.fragmentId)
-      : ''
-
   return (
     <div className="space-y-3">
       <div>
@@ -218,35 +199,11 @@ export function BlockCodeEditor({
       {sourceFile && fileContent !== null && !loadError && (
         <>
           {isIpynb ? (
-            <div>
-              <label className="mb-2 block text-xs text-muted-foreground">
-                Komórki (zaznacz do wyświetlenia)
-              </label>
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-border bg-muted/20 p-2 space-y-1">
-                {ipynbCells.map((src, idx) => {
-                  const preview = src.slice(0, 80).replace(/\n/g, ' ')
-                  return (
-                    <label
-                      key={idx}
-                      className="flex items-start gap-2 cursor-pointer rounded px-2 py-1 hover:bg-muted/50"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedCells.has(idx)}
-                        onChange={() => toggleCell(idx)}
-                        className="mt-1"
-                      />
-                      <span className="text-xs font-mono text-muted-foreground">
-                        [{idx}] {preview}{preview.length >= 80 ? '…' : ''}
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
-              {ipynbCells.length === 0 && (
-                <p className="text-sm text-muted-foreground">Brak komórek w notebooku.</p>
-              )}
-            </div>
+            <IpynbCellSelector
+              summaries={ipynbCellSummaries}
+              selectedCells={selectedCells}
+              onToggle={toggleCell}
+            />
           ) : (
             <div className="space-y-3">
               <Collapsible open={fullFileOpen} onOpenChange={setFullFileOpen}>
@@ -313,15 +270,6 @@ export function BlockCodeEditor({
                 />
               </div>
               </div>
-            </div>
-          )}
-
-          {previewFragment && (
-            <div>
-              <label className="mb-1 block text-xs text-muted-foreground">Podgląd fragmentu</label>
-              <pre className="max-h-40 overflow-auto rounded-lg border border-border bg-muted/30 p-3 text-xs font-mono whitespace-pre-wrap break-words">
-                {previewFragment}
-              </pre>
             </div>
           )}
         </>

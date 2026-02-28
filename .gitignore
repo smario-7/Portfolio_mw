@@ -58,6 +58,7 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+*.timestamp-*.mjs
 .cache/
 
 # Uploaded project attachments
@@ -72,5 +73,15 @@ coverage/
 .coverage
 htmlcov/
 
+# Playwright E2E
+e2e/.auth/user.json
+test-results/
+playwright-report/
+playwright/.cache/
+
 # snippets 
 /snippets
+
+CLAUDE.md
+AGENTS.md
+.cursorignore

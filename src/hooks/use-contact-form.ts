@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
-import { submitContactMessage } from '@/lib/api/contact-api'
+import { submitMessage } from '@/lib/services/contact-service'
 import { validateContactForm, type ContactFormErrors } from '@/lib/validation/contact-validation'
 import type { ProfanityFieldResult } from '@/lib/validation/profanity-filter'
 
@@ -94,7 +94,7 @@ export function useContactForm(): UseContactFormReturn {
     setProfanityFields([])
 
     try {
-      await submitContactMessage({
+      await submitMessage({
         name: name.trim(),
         email: email.trim(),
         message: message.trim(),

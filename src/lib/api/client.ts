@@ -1,3 +1,5 @@
+import { HttpRequestError } from '@/lib/errors'
+
 const API_BASE =
   typeof import.meta.env.VITE_API_URL === 'string'
     ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
@@ -33,8 +35,10 @@ export async function apiRequest<T>(
   const response = await fetch(url, config)
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error((error as { error?: string })?.error || `HTTP error! status: ${response.status}`)
+    const body = await response.json().catch(() => ({}))
+    const message =
+      (body as { error?: string })?.error || `HTTP error! status: ${response.status}`
+    throw new HttpRequestError(message, response.status, body)
   }
 
   const contentType = response.headers.get('content-type')

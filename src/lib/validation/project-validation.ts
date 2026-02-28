@@ -1,4 +1,4 @@
-import type { ProjectCategory, ProjectDetailBlock, ProjectDownloadLinks } from '@/lib/types'
+import type { ProjectCategory, ProjectDetailBlock } from '@/lib/types'
 
 export interface ProjectFormErrors {
   title?: string
@@ -51,6 +51,20 @@ export function validateFullDescriptionBlocks(
             })
             if (!valid) {
               errors[index] = 'Kod (ipynb): fragment to indeksy komórek (np. 0,2,4 lub 1-3)'
+            } else {
+              for (const p of parts) {
+                const t = p.trim()
+                const rangeMatch = /^(\d+)-(\d+)$/.exec(t)
+                if (rangeMatch) {
+                  const n = parseInt(rangeMatch[1], 10)
+                  const m = parseInt(rangeMatch[2], 10)
+                  if (n > m) {
+                    errors[index] =
+                      'Kod (ipynb): w zakresie indeksów wartość „od” musi być mniejsza lub równa „do”'
+                    break
+                  }
+                }
+              }
             }
           }
         }
@@ -72,9 +86,6 @@ export interface ProjectFormData {
   status: 'draft' | 'published'
   image: File | null
   imagePath: string
-  pdf: File | null
-  ipynb: File | null
-  downloadLinks: ProjectDownloadLinks
   color?: string
 }
 

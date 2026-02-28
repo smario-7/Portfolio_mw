@@ -1,11 +1,11 @@
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useContent } from '@/contexts/PortfolioContext'
 
 interface HomeSectionProps {
   onSeeProjects?: () => void
 }
 
 export function HomeSection({ onSeeProjects }: HomeSectionProps) {
-  const { content } = usePortfolio()
+  const { content } = useContent()
   const home = content.home
 
   return (

@@ -1,4 +1,10 @@
-import type { Project, ProjectDetailBlock, BlockText } from '@/lib/types'
+import type {
+  Project,
+  ProjectAttachment,
+  ProjectDetailBlock,
+  BlockText,
+} from '@/lib/types'
+import type { ProjectFormData } from '@/lib/validation/project-validation'
 
 export interface RawProject extends Omit<Project, 'fullDescription'> {
   fullDescription?: string | ProjectDetailBlock[]
@@ -46,4 +52,38 @@ export function formStringToFullDescriptionBlocks(
   const trimmed = s.trim()
   if (!trimmed) return undefined
   return [{ type: 'text', content: trimmed }]
+}
+
+export interface BuildProjectFromFormDataParams {
+  formData: ProjectFormData
+  attachments: ProjectAttachment[]
+  projectId: number
+  existingImagePath?: string
+}
+
+export function buildProjectFromFormData(
+  params: BuildProjectFromFormDataParams
+): Project {
+  const { formData, attachments, projectId, existingImagePath } = params
+  const image =
+    formData.imagePath?.trim() || existingImagePath || undefined
+  const fullDescription =
+    formData.fullDescriptionBlocks.length > 0
+      ? formData.fullDescriptionBlocks
+      : undefined
+  return {
+    id: projectId,
+    title: formData.title.trim(),
+    description: formData.shortDescription.trim(),
+    category: formData.category,
+    stack: formData.technologies,
+    github: formData.githubUrl.trim(),
+    demo: formData.demoUrl.trim(),
+    image,
+    color: formData.color?.trim() || undefined,
+    status: formData.status,
+    featured: formData.featured,
+    fullDescription,
+    attachments,
+  }
 }

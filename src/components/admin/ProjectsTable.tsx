@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Edit, Trash2, GripVertical, Palette } from 'lucide-react'
 import { toast } from 'sonner'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useProjects } from '@/contexts/PortfolioContext'
+import { adminProject } from '@/lib/constants/routes'
+import { ProjectOrderSaveError, reportError } from '@/lib/errors'
 import { ColorPickerModal } from '@/components/admin/ColorPickerModal'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -57,7 +59,7 @@ function SortableRow({
   onToggleSelect,
   onSetDeleteId,
 }: SortableRowProps) {
-  const { updateProject } = usePortfolio()
+  const { updateProject } = useProjects()
   const [colorPickerOpen, setColorPickerOpen] = useState(false)
   const {
     attributes,
@@ -170,7 +172,7 @@ function SortableRow({
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2">
           <Link
-            to={`/admin/projects/${project.id}`}
+            to={adminProject(project.id)}
             className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
             aria-label="Edytuj projekt"
           >
@@ -191,7 +193,8 @@ function SortableRow({
 }
 
 export function ProjectsTable() {
-  const { projects, deleteProject, setProjects } = usePortfolio()
+  const { projects, deleteProject, setProjects, updateProject, useSupabase } =
+    useProjects()
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [showBulkDelete, setShowBulkDelete] = useState(false)
@@ -209,21 +212,27 @@ export function ProjectsTable() {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
-      setProjects((prevProjects) => {
-        const oldIndex = prevProjects.findIndex((p) => p.id === active.id)
-        const newIndex = prevProjects.findIndex((p) => p.id === over.id)
+      const oldIndex = projects.findIndex((p) => p.id === active.id)
+      const newIndex = projects.findIndex((p) => p.id === over.id)
+      const reorderedProjects = arrayMove(projects, oldIndex, newIndex)
+      const updatedProjects = reorderedProjects.map((project, index) => ({
+        ...project,
+        order: index + 1,
+      }))
 
-        const reorderedProjects = arrayMove(prevProjects, oldIndex, newIndex)
-
-        const updatedProjects = reorderedProjects.map((project, index) => ({
-          ...project,
-          order: index + 1,
-        }))
-
-        return updatedProjects
-      })
-
+      setProjects(updatedProjects)
       toast.success('Kolejność projektów została zmieniona')
+
+      if (useSupabase) {
+        Promise.all(
+          updatedProjects.map((p) => updateProject(p.id, { order: p.order }))
+        ).catch((err) => {
+          const msg = reportError(new ProjectOrderSaveError('updateProject order', err), {
+            context: 'projects_table_order_save',
+          })
+          toast.error(msg)
+        })
+      }
     }
   }
 

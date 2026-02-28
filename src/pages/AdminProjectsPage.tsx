@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Loader2 } from 'lucide-react'
 import { useState } from 'react'
-import { usePortfolio } from '@/contexts/PortfolioContext'
+import { useProjects } from '@/contexts/PortfolioContext'
+import { adminProject } from '@/lib/constants/routes'
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
 import { ProjectsTable } from '@/components/admin/ProjectsTable'
 import { Button } from '@/components/ui/button'
@@ -9,14 +10,14 @@ import { toast } from 'sonner'
 
 export default function AdminProjects() {
   const navigate = useNavigate()
-  const { createProject } = usePortfolio()
+  const { createProject } = useProjects()
   const [creating, setCreating] = useState(false)
 
   const handleNewProject = async () => {
     setCreating(true)
     try {
       const project = await createProject()
-      navigate(`/admin/projects/${project.id}`)
+      navigate(adminProject(project.id))
     } catch {
       toast.error('Nie udało się utworzyć projektu.')
     } finally {

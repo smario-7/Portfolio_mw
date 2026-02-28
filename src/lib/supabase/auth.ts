@@ -1,4 +1,6 @@
 import type { Session } from '@supabase/supabase-js'
+import { ADMIN_DASHBOARD } from '@/lib/constants/routes'
+import { getFullUrlForRoute } from '@/lib/constants/app-url'
 import { supabase } from './client'
 
 export function isAuthAvailable(): boolean {
@@ -7,9 +9,7 @@ export function isAuthAvailable(): boolean {
 
 export function signInWithGoogle(redirectTo?: string): void {
   if (!supabase) return
-  const url =
-    redirectTo ??
-    `${window.location.origin}${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/admin/dashboard`
+  const url = redirectTo ?? getFullUrlForRoute(ADMIN_DASHBOARD)
   updateSessionActivity()
   supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: url } })
 }

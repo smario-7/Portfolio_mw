@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Code, Briefcase, User, Mail, LogIn, Power } from 'lucide-react'
@@ -11,15 +12,24 @@ import {
 } from '@/components/portfolio/projects-zoom'
 import { TabletScene } from '@/components/portfolio/TabletScene'
 import { HomeSection } from '@/components/portfolio/HomeSection'
-import { ProjectsSection } from '@/components/portfolio/ProjectsSection'
-import { AboutSection } from '@/components/portfolio/AboutSection'
-import { ContactSection } from '@/components/portfolio/ContactSection'
 import { Copyright } from '@/components/portfolio/Copyright'
 import { usePortfolio } from '@/contexts/PortfolioContext'
+import { ADMIN_LOGIN } from '@/lib/constants/routes'
 import { hasAboutContent, hasContactContent } from '@/lib/services/content-service'
-import { recordPageView } from '@/lib/api/page-views-api'
+import * as pageViewsService from '@/lib/services/page-views-service'
 import { TabletModalContainerContext } from '@/contexts/TabletModalContainerContext'
 import { cn } from '@/lib/utils'
+import { PageViewRecordError, reportError } from '@/lib/errors'
+
+const ProjectsSection = React.lazy(() =>
+  import('@/components/portfolio/ProjectsSection').then((m) => ({ default: m.ProjectsSection }))
+)
+const AboutSection = React.lazy(() =>
+  import('@/components/portfolio/AboutSection').then((m) => ({ default: m.AboutSection }))
+)
+const ContactSection = React.lazy(() =>
+  import('@/components/portfolio/ContactSection').then((m) => ({ default: m.ContactSection }))
+)
 
 type TabId = 'home' | 'projects' | 'about' | 'contact'
 
@@ -37,6 +47,7 @@ export default function Home() {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const [tabletModalContainer] = useState<HTMLElement | null>(null)
   const projectsListScrollTopRef = useRef<number>(0)
+  const prevSelectedProjectIdRef = useRef<number | null>(null)
 
   const { content, projects, loading, error } = usePortfolio()
   const visibleProjects = useMemo(
@@ -113,7 +124,10 @@ export default function Home() {
     } catch {
       return
     }
-    recordPageView('home').catch(() => {
+    pageViewsService.recordPageView('home').catch((err) => {
+      reportError(new PageViewRecordError('recordPageView home', err), {
+        context: 'record_page_view',
+      })
       try {
         sessionStorage.removeItem(key)
       } catch {
@@ -153,7 +167,10 @@ export default function Home() {
   }, [selectedProjectId, tabletContainerRef])
 
   useEffect(() => {
-    if (selectedProjectId === null && activeTab === 'projects') {
+    const hadProject = prevSelectedProjectIdRef.current !== null
+    const returnedFromDetail = hadProject && selectedProjectId === null && activeTab === 'projects'
+    prevSelectedProjectIdRef.current = selectedProjectId
+    if (returnedFromDetail && tabletContainerRef.current) {
       requestAnimationFrame(() => {
         if (tabletContainerRef.current) {
           tabletContainerRef.current.scrollTop = projectsListScrollTopRef.current
@@ -192,7 +209,7 @@ export default function Home() {
               />
             </button>
             <Link
-              to="/admin/login"
+              to={ADMIN_LOGIN}
               className={`fixed top-6 right-6 z-40 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/50 text-muted-foreground transition-colors hover:border-primary hover:bg-card hover:text-primary ${zoomPhase !== 'idle' ? 'invisible pointer-events-none' : ''}`}
               aria-label="Zaloguj się"
               title="Zaloguj się"
@@ -301,17 +318,45 @@ export default function Home() {
                           {screenOn && (
                             <ProjectsZoomTrigger ref={zoomTriggerRef} onClick={openZoom} />
                           )}
-                          <ProjectsSection
-                            selectedCategory={selectedCategory}
-                            setSelectedCategory={setSelectedCategory}
-                            selectedProjectId={selectedProjectId}
-                            setSelectedProjectId={setSelectedProjectId}
-                            onSelectProject={handleSelectProject}
-                          />
+                          <React.Suspense
+                            fallback={
+                              <div className="flex min-h-[200px] items-center justify-center">
+                                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                              </div>
+                            }
+                          >
+                            <ProjectsSection
+                              selectedCategory={selectedCategory}
+                              setSelectedCategory={setSelectedCategory}
+                              selectedProjectId={selectedProjectId}
+                              setSelectedProjectId={setSelectedProjectId}
+                              onSelectProject={handleSelectProject}
+                            />
+                          </React.Suspense>
                         </>
                       )}
-                      {activeTab === 'about' && <AboutSection />}
-                      {activeTab === 'contact' && <ContactSection />}
+                      {activeTab === 'about' && (
+                        <React.Suspense
+                          fallback={
+                            <div className="flex min-h-[200px] items-center justify-center">
+                              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            </div>
+                          }
+                        >
+                          <AboutSection />
+                        </React.Suspense>
+                      )}
+                      {activeTab === 'contact' && (
+                        <React.Suspense
+                          fallback={
+                            <div className="flex min-h-[200px] items-center justify-center">
+                              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                            </div>
+                          }
+                        >
+                          <ContactSection />
+                        </React.Suspense>
+                      )}
                     </div>
                   </main>
                 </div>

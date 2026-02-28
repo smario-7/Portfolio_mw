@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
-import { getAdminSettings, saveAdminSettings } from '@/lib/api/admin-settings-api'
+import { reportError } from '@/lib/errors/report-error'
+import * as adminSettingsService from '@/lib/services/admin-settings-service'
 import { AdminPageContainer } from '@/components/admin/AdminPageContainer'
 import { AdminSectionCard } from '@/components/admin/AdminSectionCard'
 import { ContactMessagesSection } from '@/components/admin/contact-messages/ContactMessagesSection'
@@ -17,13 +18,14 @@ export default function AdminSettings() {
     async function loadSettings() {
       setIsLoading(true)
       try {
-        const data = await getAdminSettings()
+        const data = await adminSettingsService.getAdminSettings()
         if (data) {
           setEmail(data.email)
           setName(data.name)
         }
-      } catch (_error) {
-        toast.error('Nie udało się załadować ustawień')
+      } catch (error) {
+        const msg = reportError(error, { context: 'AdminSettingsPage loadSettings' })
+        toast.error(msg)
       } finally {
         setIsLoading(false)
       }
@@ -42,13 +44,14 @@ export default function AdminSettings() {
     
     setIsSaving(true)
     try {
-      await saveAdminSettings({
+      await adminSettingsService.saveAdminSettings({
         email: trimmedEmail,
         name: trimmedName,
       })
       toast.success('Ustawienia zapisane')
-    } catch (_error) {
-      toast.error('Nie udało się zapisać ustawień')
+    } catch (error) {
+      const msg = reportError(error, { context: 'AdminSettingsPage saveSettings' })
+      toast.error(msg)
     } finally {
       setIsSaving(false)
     }

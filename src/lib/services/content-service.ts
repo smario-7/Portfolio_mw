@@ -1,5 +1,9 @@
 import type { ContentData } from '@/lib/types'
-import { getContent as getContentApi, saveContent as saveContentApi } from '@/lib/api/content-api'
+import {
+  getContent as getContentApi,
+  saveContent as saveContentApi,
+  getContentLastUpdatedAt as getContentLastUpdatedAtApi,
+} from '@/lib/api/content-api'
 
 export async function loadContent(): Promise<ContentData> {
   return getContentApi()
@@ -7,6 +11,10 @@ export async function loadContent(): Promise<ContentData> {
 
 export async function saveContent(data: ContentData): Promise<void> {
   await saveContentApi(data)
+}
+
+export async function getContentLastUpdatedAt(): Promise<string | null> {
+  return getContentLastUpdatedAtApi()
 }
 
 export function hasAboutContent(content: ContentData): boolean {

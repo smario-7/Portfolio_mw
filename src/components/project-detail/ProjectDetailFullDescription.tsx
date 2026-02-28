@@ -1,7 +1,7 @@
 import type { ProjectDetailBlock } from '@/lib/types'
 import { BlockTextRenderer } from './BlockTextRenderer'
 import { BlockScreenshotRenderer } from './BlockScreenshotRenderer'
-import { BlockCodeRenderer } from './BlockCodeRenderer'
+import { BlockCodeRenderer } from './code-block'
 
 interface ProjectDetailFullDescriptionProps {
   fullDescription?: ProjectDetailBlock[]

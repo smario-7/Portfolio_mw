@@ -1,160 +1,174 @@
-# Struktura danych wyświetlanych na stronie
+# Struktura bazy danych Supabase
 
-**Obowiązujący opis** danych i ich mapowania na widoki. Przy dodawaniu pól, zmianie typów lub powiązań komponentów należy trzymać się tej struktury i zaktualizować ten dokument.
+Opis tabel, kolumn, RLS, Storage oraz funkcji i triggerów w bazie Supabase używanej w projekcie. Źródło definicji: skrypty w `scripts/supabase/`, typy TypeScript generowane poleceniem `npm run gen:supabase-types` do `src/lib/supabase/database.types.ts`.
 
-Aplikacja opiera się na trzech głównych źródłach: **treści strony** (teksty, przyciski, umiejętności), **listy projektów** oraz **katalogach pomocniczych** (narzędzia, ikony kontaktów). Poniżej każda z tych grup jest opisana wraz z polami i miejscem użycia w widokach.
-
----
-
-## 1. Wprowadzenie
-
-Na stronie portfolio wyświetlane są:
-
-- **ContentData** — treść sekcji: strona główna (hero, przyciski, nagłówki), sekcja „O mnie” (wprowadzenie, doświadczenie, umiejętności, kafelki, narzędzia) oraz sekcja kontakt (tytuł, opis, linki).
-- **Projekty (Project[])** — lista projektów z opisami, stosem technologii, linkami do repozytorium i demo; używana na stronie projektów oraz w widoku szczegółów pojedynczego projektu.
-- **Katalogi** — stałe zestawy danych: katalog narzędzi (ToolItem) do wyświetlania wybranych narzędzi w sekcji „O mnie” oraz mapowanie typów linków kontaktowych na nazwy ikon (contact-icons).
-
-Dane treści i projekty są udostępniane przez funkcje w `src/lib/data/store.ts` (`getContent()`, `getProjects()`, `getProjectFilters()`, `getToolsCatalog()`). Domyślna treść strony pochodzi z `content-defaults.ts`, lista projektów z `projects.ts`.
+Schemat: **public**.
 
 ---
 
-## 2. Treść strony (ContentData)
+## 1. Tabele
 
-Typ `ContentData` (plik `src/lib/types/content.ts`) grupuje całą edytowalną treść strony w trzy bloki: `home`, `about`, `contact`.
+### 1.1 app_data
 
-### 2.1 Sekcja Home (strona główna)
+Przechowuje dane w formacie klucz–wartość (JSON). Używane m.in. pod kluczem `content` dla edytowalnej treści strony (ContentData: home, about, contact).
 
-| Pole | Typ | Opis |
-|------|-----|------|
-| `heroTitle` | string | Główny tytuł w sekcji hero (np. „Cześć, jestem…”). |
-| `heroSubtitle` | string | Podtytuł pod głównym tytułem. |
-| `heroDescription` | string | Krótki opis pod tytułem. |
-| `button1Text` | string | Tekst pierwszego przycisku (np. „Zobacz projekty”). |
-| `button2Text` | string | Tekst drugiego przycisku (np. „Pobierz CV”). |
-| `projectsTitle` | string | Tytuł sekcji projektów. |
-| `projectsDescription` | string | Opis sekcji projektów. |
-| `skills` | string[] | Lista umiejętności wyświetlanych na stronie głównej (np. etykiety). |
+| Kolumna    | Typ        | Ograniczenia        | Opis |
+|------------|------------|---------------------|------|
+| key        | text       | PRIMARY KEY         | Klucz rekordu (np. `content`) |
+| value      | jsonb      | NOT NULL            | Wartość (dowolny JSON) |
+| updated_at | timestamptz| DEFAULT now()       | Ostatnia aktualizacja |
 
-**Gdzie używane:** Pola sekcji Home są edytowane w panelu administracyjnym (zakładka treści – content-home-tab). Na stronie głównej komponent `HomeSection` korzysta z `content.home` jako źródła treści.
-
-### 2.2 Sekcja About (O mnie)
-
-| Pole | Typ | Opis |
-|------|-----|------|
-| `introduction` | string | Wstępny opis w sekcji „O mnie”. |
-| `experience` | tablica obiektów | Lista wpisów doświadczenia. Każdy wpis ma: `year` (string), `title` (string), `description` (string). |
-| `skills` | obiekt { [kategoria]: string[] } | Umiejętności pogrupowane w kategorie (np. „Frontend”, „Backend”). Klucz to nazwa kategorii, wartość to lista nazw umiejętności. |
-| `tiles` | AboutTile[] (opcjonalne) | Kafelki z ikoną, tytułem i opisem (np. „Doświadczenie”, „Edukacja”, „Zainteresowania”). |
-| `tools` | string[] (opcjonalne) | Lista identyfikatorów narzędzi odwołujących się do katalogu `TOOLS_CATALOG`; wyświetlane są tylko wybrane narzędzia. |
-
-**Gdzie używane:** W panelu admin wszystkie te pola są edytowane (content-about-tab). Na stronie publicznej komponent `AboutSection` wyświetla: `tiles` (kafelki z ikonami), `skills` (umiejętności wg kategorii) oraz narzędzia z katalogu wskazane przez `tools`. Pola `introduction` i `experience` są używane w panelu admin i na stronie „O mnie” z `content.about`.
-
-### 2.3 Sekcja Contact (Kontakt)
-
-| Pole | Typ | Opis |
-|------|-----|------|
-| `title` | string | Tytuł sekcji kontakt (np. „Skontaktuj się”). |
-| `description` | string | Krótki opis nad linkami/formularzem. |
-| `email` | string | Adres e-mail (może być używany jako zapas, gdy brak `links`). |
-| `phone` | string | Numer telefonu. |
-| `github` | string | URL profilu GitHub. |
-| `linkedin` | string | URL profilu LinkedIn. |
-| `links` | ContactLink[] (opcjonalne) | Lista linków kontaktowych (e-mail, telefon, LinkedIn itd.) wyświetlana w sekcji „Bezpośrednie linki”. |
-
-**Gdzie używane:** Komponent `ContactSection` korzysta z `title`, `description` oraz `links`. Dla każdego linku wyświetlana jest ikona (na podstawie `type` i mapowania w contact-icons), etykieta (np. z `label` lub domyślna dla danego typu) oraz wartość `value` (adres e-mail, numer, URL). Pola `email`, `phone`, `github`, `linkedin` są w strukturze danych i mogą być używane w panelu admin lub jako rezerwa.
+**RLS:** odczyt (SELECT) dla `anon` i `authenticated`; zapis (INSERT/UPDATE/DELETE) tylko dla `authenticated`. Skrypt: `01-app_data-rls.sql`.
 
 ---
 
-## 3. Projekty (Project)
+### 1.2 projects
 
-Projekty są opisane typem `Project` (plik `src/lib/types.ts`) i przechowywane jako tablica w `src/lib/data/projects.ts`.
+Projekty portfolio. Lista wyświetlana na stronie i w panelu admin; mapowanie na typ `Project` w aplikacji.
 
-### 3.1 Pola projektu
+| Kolumna         | Typ        | Ograniczenia        | Opis |
+|-----------------|------------|---------------------|------|
+| id              | bigint     | GENERATED ALWAYS AS IDENTITY, PRIMARY KEY | Identyfikator |
+| title           | text       | NOT NULL, default '' | Tytuł |
+| description     | text       | NOT NULL, default '' | Krótki opis |
+| category        | text       | NOT NULL, CHECK (Frontend/Backend/AI/Analiza Danych/Full Stack) | Kategoria |
+| stack           | jsonb      | NOT NULL, default '[]' | Lista technologii |
+| image           | text       | —                   | Ścieżka do obrazka |
+| github          | text       | NOT NULL, default '' | Link do repozytorium |
+| demo            | text       | NOT NULL, default '' | Link do demo |
+| color           | text       | —                   | Np. klasy Tailwind do gradientu |
+| order           | int        | NOT NULL, default 0 | Kolejność wyświetlania |
+| full_description| jsonb      | NOT NULL, default '[]' | Rozszerzony opis (bloki treści) |
+| attachments     | jsonb      | NOT NULL, default '[]' | Lista załączników wyświetlana na tablecie; w panelu admin użytkownik wybiera je z puli plików projektu w Storage (rozszerzenia .pdf, .ipynb, .md, .py) i ustala kolejność wyświetlania. |
+| download_links  | jsonb      | —                   | Nieużywane w UI ani przy zapisie z panelu admin; kolumna zachowana dla kompatybilności wstecznej. |
+| status         | text       | default 'draft', CHECK (draft/published) | Status publikacji |
+| featured       | boolean    | default false       | Czy wyróżniony |
+| created_at     | timestamptz| default now()       | Data utworzenia |
+| updated_at     | timestamptz| default now()       | Aktualizowany przez trigger |
 
-| Pole | Typ | Opis |
-|------|-----|------|
-| `id` | number | Unikalny identyfikator projektu. |
-| `title` | string | Tytuł projektu. |
-| `description` | string | Krótki opis (np. w karcie i na górze strony szczegółów). |
-| `category` | ProjectCategory | Kategoria: „Frontend”, „Backend”, „AI” lub „Analiza Danych”. |
-| `stack` | string[] | Lista technologii (wyświetlane jako etykiety/badże). |
-| `image` | string (opcjonalne) | Ścieżka do obrazka projektu (np. `/projects/…`). |
-| `github` | string | Link do repozytorium GitHub. |
-| `demo` | string | Link do wersji demo. |
-| `color` | string (opcjonalne) | Klasy Tailwind do gradientu (np. „from-blue-500 to-cyan-500”). |
-| `fullDescription` | string (opcjonalne) | Rozszerzony opis wyświetlany na stronie szczegółów projektu. |
-
-### 3.2 Kategorie i filtry
-
-- **ProjectCategory** — jeden z: `'Frontend' | 'Backend' | 'AI' | 'Analiza Danych'`.
-- **ProjectFilter** — `'Wszystkie'` lub jedna z kategorii. Lista filtrów do wyboru jest budowana dynamicznie przez `getProjectFilters()` na podstawie kategorii występujących w liście projektów (w pliku danych eksportowana jest też stała `PROJECT_FILTERS`).
-
-**Gdzie używane:** Lista projektów i filtry — komponent `ProjectsSection` (pobiera projekty i filtry ze store’a), karty projektów — `ProjectCard` (tytuł, opis, stack, kolor, linki GitHub i demo). Widok szczegółów pojedynczego projektu — `ProjectDetail` (wszystkie pola, w tym `fullDescription` jeśli jest). Panel admin korzysta z tej samej listy projektów (np. tabela projektów).
-
----
-
-## 4. Struktury pomocnicze
-
-### 4.1 ContactLink i ContactLinkType
-
-- **ContactLinkType** — typ linku: `'linkedin' | 'facebook' | 'instagram' | 'phone' | 'email'`.
-- **ContactLink**:
-  - `type` — ContactLinkType (określa ikonę i domyślną etykietę),
-  - `label` (opcjonalne) — własna etykieta zamiast domyślnej,
-  - `value` — wartość linku (adres e-mail, numer telefonu lub URL).
-
-Ikony dla typów są zdefiniowane w `src/lib/data/contact-icons.ts` (mapowanie typ → nazwa ikony Lucide). Na stronie kontakt linki `email` i `phone` generują odpowiednio `mailto:` i `tel:`; pozostałe typy są traktowane jako zwykłe URL-e (np. LinkedIn, Facebook, Instagram).
-
-### 4.2 AboutTile
-
-Kafelek w sekcji „O mnie”:
-
-- `id` — unikalny identyfikator (string),
-- `title` — tytuł kafelka,
-- `description` — krótki opis,
-- `icon` (opcjonalne) — nazwa ikony z biblioteki Lucide (np. „Briefcase”, „GraduationCap”).
-
-Komponent `AboutSection` wyświetla kafelki w siatce i mapuje `icon` na komponent ikony.
-
-### 4.3 ToolItem (katalog narzędzi)
-
-Element katalogu narzędzi (plik `src/lib/data/tools-catalog.ts`):
-
-- `id` — identyfikator (np. „git”, „react”, „python”),
-- `name` — nazwa wyświetlana (np. „Git”, „React”),
-- `icon` — nazwa ikony Lucide (np. „GitBranch”, „Code2”).
-
-Sekcja „O mnie” w `ContentData.about.tools` przechowuje listę takich `id`; wyświetlane są tylko te narzędzia z katalogu, których `id` znajduje się na tej liście. Katalog jest zwracany przez `getToolsCatalog()`.
+**RLS:** odczyt dla `anon` i `authenticated`; zapis (INSERT/UPDATE/DELETE) tylko dla `authenticated`. Skrypt: `03-projects-table.sql`. Trigger `projects_updated_at` ustawia `updated_at = now()` przy UPDATE.
 
 ---
 
-## 5. Geometria (ekran tabletu)
+### 1.3 page_views
 
-Typy `Point`, `Quad` i `ScreenQuad` (plik `src/lib/types.ts`) nie opisują treści tekstowych, tylko geometrię obszaru ekranu tabletu na stronie:
+Licznik odwiedzin. Anonim rejestruje wizytę (INSERT), zalogowany admin czyta statystyki (SELECT) i może usuwać (DELETE).
 
-- **Point** — `{ x: number, y: number }`.
-- **Quad** — krotka czterech punktów `[Point, Point, Point, Point]`.
-- **ScreenQuad** — obiekt z polami `p1`, `p2`, `p3`, `p4` (Point), reprezentujący cztery rogi ekranu tabletu.
+| Kolumna  | Typ        | Ograniczenia        | Opis |
+|----------|------------|---------------------|------|
+| id       | bigint     | GENERATED ALWAYS AS IDENTITY, PRIMARY KEY | Identyfikator |
+| viewed_at| timestamptz| default now()       | Czas wizyty |
+| page     | text       | default 'home'      | Identyfikator strony |
 
-Hook `useTabletScreenQuad` oblicza te współrzędne na podstawie elementów DOM i używa ich m.in. do ustalenia, czy zdarzenie scrollowania ma być przechwycone w obszarze tabletu. Nie wpływają one na treść wyświetlaną użytkownikowi w formie tekstu czy list.
+Indeks: `page_views_viewed_at_desc` na `(viewed_at DESC)`.
+
+**RLS:** INSERT tylko `anon`; SELECT i DELETE tylko `authenticated`. Skrypty: `04-page_views.sql`, `04a-page_views-anon-insert-fix.sql`, `04b-page_views-authenticated-delete.sql` / `05-page_views_delete_policy.sql`.
 
 ---
 
-## 6. Mapowanie: dane → widoki
+### 1.4 contact_messages
 
-Poniższa tabela wskazuje, która część danych jest używana w którym komponencie lub stronie.
+Wiadomości z formularza kontaktowego. Anonim wstawia (INSERT) z formularza publicznego; zalogowany admin może też wstawiać (np. testowanie formularza), czytać, aktualizować (np. oznaczenie jako przetworzone) i usuwać.
 
-| Dane | Gdzie używane |
-|------|----------------|
-| `content.home.*` | Panel admin: zakładka treści (content-home-tab). Strona główna: HomeSection (źródło: content.home). |
-| `content.about.introduction`, `content.about.experience` | Panel admin: content-about-tab (edycja). |
-| `content.about.skills` | Panel admin: content-about-tab. Strona: AboutSection (umiejętności wg kategorii). |
-| `content.about.tiles` | Panel admin: content-about-tab. Strona: AboutSection (kafelki z ikonami). |
-| `content.about.tools` | Panel admin: content-about-tab. Strona: AboutSection (wybór narzędzi z TOOLS_CATALOG). |
-| `content.contact.*` | Panel admin: content-contact-tab. Strona: ContactSection (title, description, links). |
-| `projects` (getProjects) | Strona: ProjectsSection, ProjectCard, ProjectDetail. Panel admin: np. tabela projektów. |
-| `getProjectFilters()` | Strona: ProjectsSection (przyciski filtrów kategorii). |
-| `getToolsCatalog()` | Strona: AboutSection (wyświetlanie narzędzi po id z content.about.tools). Panel admin: wybór narzędzi. |
-| ContactLink + contact-icons | Strona: ContactSection (ikony i linki w sekcji „Bezpośrednie linki”). |
+| Kolumna     | Typ        | Ograniczenia        | Opis |
+|-------------|------------|---------------------|------|
+| id          | uuid       | PRIMARY KEY, default gen_random_uuid() | Identyfikator |
+| name        | text       | NOT NULL            | Imię/nazwa (2–100 znaków) |
+| email       | text       | NOT NULL            | Adres e-mail (regex) |
+| message     | text       | NOT NULL            | Treść (10–2000 znaków) |
+| created_at  | timestamptz| NOT NULL, default now() | Data wysłania |
+| processed   | boolean    | NOT NULL, default false | Czy oznaczono jako przetworzone |
+| processed_at| timestamptz| —                   | Kiedy oznaczono |
 
-Dzięki temu wiesz, gdzie szukać w kodzie przy zmianie wyświetlania danej treści lub przy dodawaniu nowych pól do struktury danych.
+Ograniczenia: `check_name_length`, `check_email_format`, `check_message_length`. Indeks: `idx_contact_messages_processed` na `(processed, created_at)`.
+
+**RLS:** INSERT dla `anon` i `authenticated`; SELECT, UPDATE, DELETE tylko `authenticated`. Skrypty: `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`. Trigger `contact_messages_rate_limit`: ten sam adres e-mail nie może wysłać wiadomości w ciągu 30 minut (funkcja `check_contact_rate_limit`). Skrypt: `08-contact_messages_rate_limit.sql`.
+
+---
+
+### 1.5 admin_settings
+
+Ustawienia zalogowanego użytkownika (jeden wiersz na użytkownika). Wymaga Supabase Auth (`auth.users`).
+
+| Kolumna    | Typ        | Ograniczenia        | Opis |
+|------------|------------|---------------------|------|
+| id         | uuid       | PRIMARY KEY, default gen_random_uuid() | Identyfikator |
+| user_id    | uuid       | REFERENCES auth.users(id) ON DELETE CASCADE, UNIQUE | Użytkownik |
+| email      | text       | NOT NULL            | E-mail (regex) |
+| name       | text       | NOT NULL            | Nazwa (2–100 znaków) |
+| created_at | timestamptz| NOT NULL, default now() | Data utworzenia |
+| updated_at | timestamptz| NOT NULL, default now() | Aktualizowany przez trigger |
+
+**RLS:** SELECT, INSERT, UPDATE tylko dla `authenticated` i tylko na własnym wierszu (`auth.uid() = user_id`). Skrypt: `07-admin_settings.sql`. Trigger `trigger_update_admin_settings_updated_at` ustawia `updated_at = now()` przy UPDATE.
+
+---
+
+## 2. Podsumowanie RLS
+
+| Tabela           | anon      | authenticated |
+|------------------|-----------|----------------|
+| app_data         | SELECT    | SELECT, INSERT, UPDATE, DELETE |
+| projects         | SELECT    | SELECT, INSERT, UPDATE, DELETE |
+| page_views       | INSERT    | SELECT, DELETE |
+| contact_messages | INSERT    | SELECT, INSERT, UPDATE, DELETE |
+| admin_settings   | —         | SELECT, INSERT, UPDATE tylko własny wiersz |
+
+---
+
+## 3. Storage
+
+Bucket **project-files** (publiczny): pliki projektów (załączniki, screeny), ścieżki typu `projects/{id}/...`.
+
+- **Odczyt:** wszyscy (public).
+- **Upload (INSERT):** tylko `authenticated`.
+- **Usuwanie (DELETE):** tylko `authenticated`.
+
+Szczegóły: `scripts/supabase/02-storage-policies.sql`. Bucket tworzony ręcznie w dashboardzie Supabase (Storage → New bucket → nazwa `project-files`, Public bucket włączone).
+
+---
+
+## 4. Funkcje i triggery
+
+- **projects_updated_at** — trigger BEFORE UPDATE na `projects`; ustawia `updated_at := now()`.
+- **update_admin_settings_updated_at** — trigger BEFORE UPDATE na `admin_settings`; ustawia `updated_at := now()`.
+- **check_contact_rate_limit(p_email)** — funkcja: zwraca true, jeśli adres `p_email` nie wysłał wiadomości w ostatnich 30 minut.
+- **trigger_contact_rate_limit** — trigger BEFORE INSERT na `contact_messages`; wywołuje `check_contact_rate_limit` i rzuca wyjątek przy przekroczeniu limitu.
+
+---
+
+## 5. Zależności
+
+- **admin_settings.user_id** → **auth.users(id)** ON DELETE CASCADE. Pozostałe tabele w `public` nie mają kluczy obcych do innych tabel aplikacji.
+
+---
+
+## 6. Kolejność wdrażania skryptów
+
+1. `01-app_data-rls.sql`
+2. Utworzenie bucketu `project-files` w dashboardzie
+3. `02-storage-policies.sql`
+4. `03-projects-table.sql`
+5. `04-page_views.sql` (opcjonalnie `04a-`, `04b-` / `05-` przy problemach z politykami)
+6. `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`, `08-contact_messages_rate_limit.sql`
+7. `07-admin_settings.sql` (wymaga włączonego Auth)
+
+Opcjonalnie (migracje / uzupełnienia): `03b-migrate-projects-from-app_data.sql` (jednorazowa migracja z app_data), `03c-add-color-if-missing.sql` (dodanie kolumny `color`, gdy brakuje w starszej instalacji).
+
+Szczegóły Etapu 1 (app_data, bucket, storage): `scripts/supabase/README.md`.
+
+---
+
+## 7. Mapowanie na aplikację
+
+| Źródło w bazie / Storage      | Użycie w aplikacji |
+|------------------------------|---------------------|
+| app_data (key = `content`)   | Treść strony (ContentData: home, about, contact). Typy i pola: `src/lib/types/content.ts`, widoki: HomeSection, AboutSection, ContactSection, panel admin – zakładki treści. |
+| projects                     | Lista projektów (Project[]). Widoki: ProjectsSection, ProjectCard, ProjectDetail, tabela projektów w panelu admin. Załączniki w widoku tabletu pochodzą z `project.attachments`; w adminie użytkownik wybiera je z listy plików w bucketcie (pula) i ustala kolejność. |
+| contact_messages            | Wiadomości z formularza. Panel admin: sekcja wiadomości kontaktowych. |
+| page_views                   | Statystyki odwiedzin. Panel admin: dashboard, reset licznika. |
+| admin_settings               | Ustawienia zalogowanego użytkownika (email, name). |
+| Storage bucket project-files | Obrazki i załączniki projektów; URL-e budowane w `src/lib/utils/storage-url.ts`. |
+
+Szczegółowy opis pól ContentData i Project oraz mapowanie danych na komponenty (katalogi, ikony, filtry) – typy w `src/lib/types/`, dane domyślne w `src/lib/data/`.
+
+Bloki kodu w pełnym opisie projektu (`full_description`, typ `code`): dla `sourceType: 'py'` fragment kodu wyciągany przez `src/lib/parsers/code-fragment.ts` i wyświetlany w CodeBlock (syntax highlight). Dla `sourceType: 'ipynb'` notebook jest renderowany przez **react-ipynb-renderer**; podsumowania komórek i filtrowanie po indeksach w `src/lib/parsers/ipynb/` (getIpynbCellSummaries, filterIpynbByCellIndices); komponent widoku w `src/components/project-detail/code-block/` (IpynbBlockRenderer). Pole `fragmentId` określa wybrane indeksy komórek (0-based), np. `0,2,4` lub `1-3`; puste `fragmentId` oznacza wszystkie komórki.

@@ -41,6 +41,33 @@ async function countFilesInFolder(
   return count
 }
 
+async function collectFilePaths(
+  sb: NonNullable<typeof supabase>,
+  folderPath: string
+): Promise<string[]> {
+  const { data, error } = await sb.storage.from(BUCKET).list(folderPath, { limit: 1000 })
+  if (error) throw new Error(error.message)
+  if (!data?.length) return []
+  const paths: string[] = []
+  for (const item of data) {
+    const fullPath = folderPath ? `${folderPath}/${item.name}` : item.name
+    if (item.id != null) {
+      paths.push(fullPath)
+    } else {
+      paths.push(...(await collectFilePaths(sb, fullPath)))
+    }
+  }
+  return paths
+}
+
+/** Lista ścieżek wszystkich plików w katalogu projektu w storage. Przy braku Supabase zwraca []. */
+export async function listProjectFilePaths(projectId: number): Promise<string[]> {
+  const client = supabase
+  if (!client) return []
+  const prefix = getProjectStorageBasePath(projectId)
+  return collectFilePaths(client, prefix)
+}
+
 /** Zlicza wszystkie pliki w bucketcie project-files. Przy braku Supabase zwraca 0. */
 export async function countAllStorageFiles(): Promise<number> {
   const client = supabase

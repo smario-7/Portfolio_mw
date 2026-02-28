@@ -1,4 +1,4 @@
-import type { RefObject, ReactNode } from 'react'
+import { useMemo, type RefObject, type ReactNode } from 'react'
 import { getPerspectiveMatrix3d } from '@/lib/utils'
 import type { Project, ScreenQuad, ZoomPhase } from '@/lib/types'
 import { ProjectsZoomView } from '@/components/portfolio/projects/ProjectsZoomView'
@@ -91,39 +91,44 @@ export function TabletScene({
     </div>
   )
 
+  const fullscreenStyle = useMemo(
+    () => ({
+      width: '100vw' as const,
+      height: '100vh' as const,
+      transform: 'none' as const,
+      transformOrigin: '0 0' as const,
+      clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' as const,
+    }),
+    []
+  )
+
+  const idleMatrix = useMemo(() => {
+    if (!screenQuad || !screenSize) return null
+    return getPerspectiveMatrix3d(
+      [
+        { x: 0, y: 0 },
+        { x: screenSize.w, y: 0 },
+        { x: screenSize.w, y: screenSize.h },
+        { x: 0, y: screenSize.h },
+      ],
+      [screenQuad.p1, screenQuad.p2, screenQuad.p3, screenQuad.p4]
+    )
+  }, [screenQuad, screenSize])
+
+  const idleStyle = useMemo(() => {
+    if (idleMatrix === null || !screenSize) return null
+    return {
+      width: screenSize.w,
+      height: screenSize.h,
+      transformOrigin: '0 0' as const,
+      transform: idleMatrix,
+      clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' as const,
+    }
+  }, [idleMatrix, screenSize])
+
   if (!screenQuad || !screenSize) {
     return <>{tabletFrame}</>
   }
-
-  /* Pozycjonowanie ekranu treści: macierz perspektywy 3D z narożników tabletu (screenQuad) do prostokąta w pikselach. */
-  const idleMatrix = getPerspectiveMatrix3d(
-    [
-      { x: 0, y: 0 },
-      { x: screenSize.w, y: 0 },
-      { x: screenSize.w, y: screenSize.h },
-      { x: 0, y: screenSize.h },
-    ],
-    [screenQuad.p1, screenQuad.p2, screenQuad.p3, screenQuad.p4]
-  )
-
-  const fullscreenStyle = {
-    width: '100vw' as const,
-    height: '100vh' as const,
-    transform: 'none' as const,
-    transformOrigin: '0 0' as const,
-    clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' as const,
-  }
-
-  const idleStyle =
-    idleMatrix !== null
-      ? {
-          width: screenSize.w,
-          height: screenSize.h,
-          transformOrigin: '0 0' as const,
-          transform: idleMatrix,
-          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' as const,
-        }
-      : null
 
   let style: typeof fullscreenStyle | typeof idleStyle | null = null
   if (zoomPhase === 'closing' && closingStyle) {
@@ -169,6 +174,11 @@ export function TabletScene({
       ? 1
       : 0
   const zoomInnerOpacity = isZoomFullscreen ? 1 : screenOn ? 1 : 0
+  const reflectionVisible =
+    zoomInnerOpacity === 1 &&
+    (zoomPhase === 'idle' || zoomPhase === 'closing')
+  const reflectionOpacity = reflectionVisible ? 1 : 0
+
   const hasSidebarProps =
     Boolean(zoomSidebarProjects) &&
     zoomSidebarSelectedCategory !== undefined &&
@@ -229,6 +239,11 @@ export function TabletScene({
             {children}
           </ProjectsZoomView>
         </div>
+        <div
+          className="tablet-screen-reflection"
+          style={{ opacity: reflectionOpacity }}
+          aria-hidden
+        />
       </div>
       {tabletFrame}
     </>
