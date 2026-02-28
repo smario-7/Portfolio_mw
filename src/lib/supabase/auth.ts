@@ -7,9 +7,20 @@ export function isAuthAvailable(): boolean {
   return supabase !== null
 }
 
+function isSameOriginUrl(url: string): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    const u = new URL(url, window.location.origin)
+    return u.origin === window.location.origin
+  } catch {
+    return false
+  }
+}
+
 export function signInWithGoogle(redirectTo?: string): void {
   if (!supabase) return
   const url = redirectTo ?? getFullUrlForRoute(ADMIN_DASHBOARD)
+  if (!isSameOriginUrl(url)) return
   updateSessionActivity()
   supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: url } })
 }
