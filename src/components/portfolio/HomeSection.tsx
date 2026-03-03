@@ -29,7 +29,9 @@ export function HomeSection({ onSeeProjects }: HomeSectionProps) {
             {home.button1Text}
           </button>
           <a
-            href="#"
+            href="https://github.com/smario-7/Portfolio_mw"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-lg border border-border bg-card/50 px-6 py-3 font-medium transition-colors hover:bg-card hover:text-foreground"
           >
             {home.button2Text}
