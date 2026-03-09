@@ -68,7 +68,7 @@ Indeks: `page_views_viewed_at_desc` na `(viewed_at DESC)`.
 
 ### 1.4 contact_messages
 
-Wiadomości z formularza kontaktowego. Anonim wstawia (INSERT) z formularza publicznego; zalogowany admin może też wstawiać (np. testowanie formularza), czytać, aktualizować (np. oznaczenie jako przetworzone) i usuwać.
+Wiadomości z formularza kontaktowego. **Wysyłka z formularza publicznego** odbywa się przez Edge Function **submit-contact** (INSERT z `service_role`, omija RLS). Panel admina używa repository do odczytu, aktualizacji i usuwania; insert z formularza realizuje wyłącznie Edge Function.
 
 | Kolumna     | Typ        | Ograniczenia        | Opis |
 |-------------|------------|---------------------|------|
@@ -82,7 +82,7 @@ Wiadomości z formularza kontaktowego. Anonim wstawia (INSERT) z formularza publ
 
 Ograniczenia: `check_name_length`, `check_email_format`, `check_message_length`. Indeks: `idx_contact_messages_processed` na `(processed, created_at)`.
 
-**RLS:** INSERT dla `anon` i `authenticated`; SELECT, UPDATE, DELETE tylko `authenticated`. Skrypty: `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`. Trigger `contact_messages_rate_limit`: ten sam adres e-mail nie może wysłać wiadomości w ciągu 30 minut (funkcja `check_contact_rate_limit`). Skrypt: `08-contact_messages_rate_limit.sql`.
+**RLS:** INSERT dla `anon` i `authenticated`; SELECT, UPDATE, DELETE tylko `authenticated`. Skrypty: `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`, `06c-contact_messages-anon-insert-fix.sql`, `08-contact_messages_rate_limit.sql`, `08b-contact_messages_rate_limit_10min.sql`. Trigger `contact_messages_rate_limit`: ten sam adres e-mail nie może wysłać wiadomości w ciągu **10 minut** (funkcja `check_contact_rate_limit`).
 
 ---
 
@@ -103,15 +103,29 @@ Ustawienia zalogowanego użytkownika (jeden wiersz na użytkownika). Wymaga Supa
 
 ---
 
+### 1.6 admin_allowed_emails
+
+Whitelist e-maili uprawnionych do logowania w panelu admina. Używana przez Auth Hook „Before User Created” – tylko adresy z tej tabeli mogą utworzyć konto w `auth.users`.
+
+| Kolumna   | Typ        | Ograniczenia | Opis |
+|-----------|------------|--------------|------|
+| email     | text       | PRIMARY KEY  | Adres e-mail (lowercase przy porównaniu) |
+| created_at| timestamptz| NOT NULL, default now() | Data dodania |
+
+**Dostęp:** SELECT tylko dla `supabase_auth_admin` (hook). Zarządzanie listą: SQL Editor (INSERT/DELETE jako postgres). Skrypt: `09-admin-email-whitelist.sql`. Po wdrożeniu skryptu: Dashboard → Authentication → Hooks → Before User Created → Postgres function → `hook_admin_email_whitelist`.
+
+---
+
 ## 2. Podsumowanie RLS
 
-| Tabela           | anon      | authenticated |
-|------------------|-----------|----------------|
-| app_data         | SELECT    | SELECT, INSERT, UPDATE, DELETE |
-| projects         | SELECT    | SELECT, INSERT, UPDATE, DELETE |
-| page_views       | INSERT    | SELECT, DELETE |
-| contact_messages | INSERT    | SELECT, INSERT, UPDATE, DELETE |
-| admin_settings   | —         | SELECT, INSERT, UPDATE tylko własny wiersz |
+| Tabela             | anon      | authenticated |
+|--------------------|-----------|---------------|
+| app_data           | SELECT    | SELECT, INSERT, UPDATE, DELETE |
+| projects           | SELECT    | SELECT, INSERT, UPDATE, DELETE |
+| page_views         | INSERT    | SELECT, DELETE |
+| contact_messages   | INSERT    | SELECT, INSERT, UPDATE, DELETE |
+| admin_settings     | —         | SELECT, INSERT, UPDATE tylko własny wiersz |
+| admin_allowed_emails | —       | — (tylko supabase_auth_admin) |
 
 ---
 
@@ -131,8 +145,9 @@ Szczegóły: `scripts/supabase/02-storage-policies.sql`. Bucket tworzony ręczni
 
 - **projects_updated_at** — trigger BEFORE UPDATE na `projects`; ustawia `updated_at := now()`.
 - **update_admin_settings_updated_at** — trigger BEFORE UPDATE na `admin_settings`; ustawia `updated_at := now()`.
-- **check_contact_rate_limit(p_email)** — funkcja: zwraca true, jeśli adres `p_email` nie wysłał wiadomości w ostatnich 30 minut.
+- **check_contact_rate_limit(p_email)** — funkcja: zwraca true, jeśli adres `p_email` nie wysłał wiadomości w ostatnich 10 minut.
 - **trigger_contact_rate_limit** — trigger BEFORE INSERT na `contact_messages`; wywołuje `check_contact_rate_limit` i rzuca wyjątek przy przekroczeniu limitu.
+- **hook_admin_email_whitelist(event)** — Auth Hook „Before User Created”; sprawdza, czy e-mail użytkownika jest w `admin_allowed_emails`; zwraca błąd 403, jeśli nie.
 
 ---
 
@@ -149,8 +164,9 @@ Szczegóły: `scripts/supabase/02-storage-policies.sql`. Bucket tworzony ręczni
 3. `02-storage-policies.sql`
 4. `03-projects-table.sql`
 5. `04-page_views.sql` (opcjonalnie `04a-`, `04b-` / `05-` przy problemach z politykami)
-6. `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`, `08-contact_messages_rate_limit.sql`
+6. `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`, `08-contact_messages_rate_limit.sql`, `08b-contact_messages_rate_limit_10min.sql` (opcjonalnie `06c-contact_messages-anon-insert-fix.sql` przy błędzie RLS; przy formularzu publicznym wysyłka idzie przez Edge Function `submit-contact`)
 7. `07-admin_settings.sql` (wymaga włączonego Auth)
+8. `09-admin-email-whitelist.sql` (whitelist e-maili dla panelu admina). Po uruchomieniu: Dashboard → Authentication → Hooks → Before User Created → Postgres function → `hook_admin_email_whitelist`. **Przed włączeniem hooka** dodaj swój e-mail: `insert into public.admin_allowed_emails (email) values ('twoj.email@gmail.com');`
 
 Opcjonalnie (migracje / uzupełnienia): `03b-migrate-projects-from-app_data.sql` (jednorazowa migracja z app_data), `03c-add-color-if-missing.sql` (dodanie kolumny `color`, gdy brakuje w starszej instalacji).
 
@@ -164,7 +180,7 @@ Szczegóły Etapu 1 (app_data, bucket, storage): `scripts/supabase/README.md`.
 |------------------------------|---------------------|
 | app_data (key = `content`)   | Treść strony (ContentData: home, about, contact). Typy i pola: `src/lib/types/content.ts`, widoki: HomeSection, AboutSection, ContactSection, panel admin – zakładki treści. |
 | projects                     | Lista projektów (Project[]). Widoki: ProjectsSection, ProjectCard, ProjectDetail, tabela projektów w panelu admin. Załączniki w widoku tabletu pochodzą z `project.attachments`; w adminie użytkownik wybiera je z listy plików w bucketcie (pula) i ustala kolejność. |
-| contact_messages            | Wiadomości z formularza. Panel admin: sekcja wiadomości kontaktowych. |
+| contact_messages            | Wiadomości z formularza. Wysyłka: Edge Function `submit-contact`. Panel admin: sekcja wiadomości kontaktowych (repository: odczyt, aktualizacja, usuwanie). |
 | page_views                   | Statystyki odwiedzin. Panel admin: dashboard, reset licznika. |
 | admin_settings               | Ustawienia zalogowanego użytkownika (email, name). |
 | Storage bucket project-files | Obrazki i załączniki projektów; URL-e budowane w `src/lib/utils/storage-url.ts`. |

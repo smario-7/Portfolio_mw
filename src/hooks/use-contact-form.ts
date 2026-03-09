@@ -110,7 +110,7 @@ export function useContactForm(): UseContactFormReturn {
       setTimeout(() => setSubmitSuccess(false), 3000)
     } catch (error) {
       const rawMessage = error instanceof Error ? error.message : 'Nie udało się wysłać wiadomości'
-      const isRateLimit = /30\s*minut/.test(rawMessage)
+      const isRateLimit = /\d+\s*minut/.test(rawMessage)
       if (isRateLimit) {
         setRateLimitModalOpen(true)
       } else {
