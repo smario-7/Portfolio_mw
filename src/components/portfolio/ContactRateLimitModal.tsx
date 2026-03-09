@@ -31,7 +31,7 @@ export function ContactRateLimitModal({
         </p>
         <p>
           Ze względów bezpieczeństwa nasze systemy chwilowo zablokowały
-          możliwość dodania nowego wpisu. Prosimy o odczekanie około 30 minut
+          możliwość dodania nowego wpisu. Prosimy o odczekanie około 10 minut
           przed ponowną próbą. Jeśli sprawa jest pilna, możesz skontaktować się
           ze mną bezpośrednio, korzystając z danych kontaktowych lub linków
           powyżej. Dziękuję za cierpliwość!
