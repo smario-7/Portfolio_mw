@@ -42,7 +42,7 @@ const TAB_CONFIG: { id: TabId; label: string; icon: typeof Code }[] = [
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('home')
-  const [screenOn, setScreenOn] = useState(false)
+  const [screenOn, setScreenOn] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState('Wszystkie')
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const [tabletModalContainer] = useState<HTMLElement | null>(null)
