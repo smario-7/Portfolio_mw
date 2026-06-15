@@ -1,51 +1,17 @@
-import {
-  Linkedin,
-  Facebook,
-  Instagram,
-  Phone,
-  Mail,
-  type LucideIcon,
-} from 'lucide-react'
+import { ContactLinkIcon } from '@/components/contact-link-icon'
 import { useContent } from '@/contexts/PortfolioContext'
-import { CONTACT_ICONS } from '@/lib/data/contact-icons'
-import type { ContactLinkType } from '@/lib/types'
+import {
+  CONTACT_LINK_TYPE_LABELS,
+  getContactLinkHref,
+  isExternalContactLink,
+} from '@/lib/utils/contact-link-url'
 import { useContactForm } from '@/hooks/use-contact-form'
 import { ContactRateLimitModal } from '@/components/portfolio/ContactRateLimitModal'
 import { ProfanityWarningModal } from '@/components/portfolio/ProfanityWarningModal'
 import { Textarea } from '@/components/ui/textarea'
 import { CONTACT_FORM_LIMITS } from '@/lib/constants/contact-form-limits'
 
-const CONTACT_ICON_COMPONENTS: Record<string, LucideIcon> = {
-  Linkedin,
-  Facebook,
-  Instagram,
-  Phone,
-  Mail,
-}
-
-const DEFAULT_LABELS: Record<ContactLinkType, string> = {
-  email: 'Email',
-  phone: 'Telefon',
-  linkedin: 'LinkedIn',
-  facebook: 'Facebook',
-  instagram: 'Instagram',
-}
-
-function getContactIcon(type: ContactLinkType): LucideIcon {
-  const name = CONTACT_ICONS[type]
-  const Icon = CONTACT_ICON_COMPONENTS[name]
-  return Icon ?? Mail
-}
-
-function getLinkHref(link: { type: ContactLinkType; value: string }): string {
-  if (link.type === 'email') return `mailto:${link.value}`
-  if (link.type === 'phone') return `tel:${link.value}`
-  return link.value
-}
-
-function isExternalLink(type: ContactLinkType): boolean {
-  return type === 'linkedin' || type === 'facebook' || type === 'instagram'
-}
+const DEFAULT_LABELS = CONTACT_LINK_TYPE_LABELS
 
 function getCounterColor(count: number, max: number): string {
   if (count > max) {
@@ -110,10 +76,9 @@ export function ContactSection() {
               <h3 className="mb-4 text-lg font-semibold">Bezpośrednie linki</h3>
               <div className="space-y-3">
                 {links.map((link, index) => {
-                  const Icon = getContactIcon(link.type)
-                  const href = getLinkHref(link)
+                  const href = getContactLinkHref(link)
                   const label = link.label?.trim() || DEFAULT_LABELS[link.type]
-                  const external = isExternalLink(link.type)
+                  const external = isExternalContactLink(link.type)
                   return (
                     <a
                       key={`${link.type}-${index}`}
@@ -124,7 +89,10 @@ export function ContactSection() {
                         rel: 'noopener noreferrer',
                       })}
                     >
-                      <Icon className="h-5 w-5 shrink-0 text-primary" />
+                      <ContactLinkIcon
+                        type={link.type}
+                        className="h-5 w-5 shrink-0 text-primary"
+                      />
                       <div className="min-w-0">
                         <div className="font-medium">{label}</div>
                         <div className="truncate text-sm text-muted-foreground">

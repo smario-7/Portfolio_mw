@@ -1,4 +1,10 @@
-export type ContactLinkType = 'linkedin' | 'facebook' | 'instagram' | 'phone' | 'email'
+export type ContactLinkType =
+  | 'linkedin'
+  | 'facebook'
+  | 'instagram'
+  | 'phone'
+  | 'email'
+  | 'telegram'
 
 export interface ContactLink {
   type: ContactLinkType

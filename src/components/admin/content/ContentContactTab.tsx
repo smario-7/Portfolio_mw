@@ -1,14 +1,10 @@
-import {
-  Linkedin,
-  Facebook,
-  Instagram,
-  Phone,
-  Mail,
-  Trash2,
-  type LucideIcon,
-} from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import type { ContentData, ContactLink, ContactLinkType } from '@/lib/types'
-import { CONTACT_ICONS } from '@/lib/data/contact-icons'
+import { ContactLinkIcon } from '@/components/contact-link-icon'
+import {
+  CONTACT_LINK_TYPE_LABELS,
+  getContactLinkPlaceholder,
+} from '@/lib/utils/contact-link-url'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -18,27 +14,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-const CONTACT_ICON_COMPONENTS: Record<string, LucideIcon> = {
-  Linkedin,
-  Facebook,
-  Instagram,
-  Phone,
-  Mail,
-}
-
 const LINK_TYPES: ContactLinkType[] = [
   'email',
   'phone',
+  'telegram',
   'linkedin',
   'facebook',
   'instagram',
 ]
-
-function getContactIcon(type: ContactLinkType): LucideIcon {
-  const name = CONTACT_ICONS[type]
-  const Icon = CONTACT_ICON_COMPONENTS[name]
-  return Icon ?? Mail
-}
 
 interface ContentContactTabProps {
   content: ContentData
@@ -141,14 +124,13 @@ export function ContentContactTab({
           </div>
           <div className="space-y-4">
             {links.map((link, index) => {
-              const Icon = getContactIcon(link.type)
               return (
                 <div
                   key={index}
                   className="flex flex-wrap items-start gap-3 rounded-lg border-2 border-border bg-background/50 p-4"
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded border-2 border-border text-primary">
-                    <Icon className="h-4 w-4" />
+                    <ContactLinkIcon type={link.type} className="h-4 w-4" />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-wrap gap-3 sm:flex-nowrap">
                     <div className="w-full sm:w-36">
@@ -169,7 +151,7 @@ export function ContentContactTab({
                         <SelectContent>
                           {LINK_TYPES.map((t) => (
                             <SelectItem key={t} value={t}>
-                              {t}
+                              {CONTACT_LINK_TYPE_LABELS[t]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -199,13 +181,7 @@ export function ContentContactTab({
                         onChange={(e) =>
                           updateLink(index, { value: e.target.value })
                         }
-                        placeholder={
-                          link.type === 'phone'
-                            ? '+48 123 456 789'
-                            : link.type === 'email'
-                              ? 'adres@example.com'
-                              : 'https://...'
-                        }
+                        placeholder={getContactLinkPlaceholder(link.type)}
                         className="w-full rounded-lg border-2 border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
                       />
                     </div>

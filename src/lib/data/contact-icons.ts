@@ -6,4 +6,5 @@ export const CONTACT_ICONS: Record<ContactLinkType, string> = {
   instagram: 'Instagram',
   phone: 'Phone',
   email: 'Mail',
+  telegram: 'Telegram',
 }
