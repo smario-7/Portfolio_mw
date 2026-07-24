@@ -35,8 +35,8 @@ type TabId = 'home' | 'projects' | 'about' | 'contact'
 
 const TAB_CONFIG: { id: TabId; label: string; icon: typeof Code }[] = [
   { id: 'home', label: 'Home', icon: Code },
-  { id: 'projects', label: 'Projekty', icon: Briefcase },
   { id: 'about', label: 'O mnie', icon: User },
+  { id: 'projects', label: 'Projekty', icon: Briefcase },
   { id: 'contact', label: 'Kontakt', icon: Mail },
 ]
 
