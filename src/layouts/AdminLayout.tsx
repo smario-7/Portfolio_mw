@@ -3,10 +3,16 @@ import { Sidebar } from '@/components/admin/Sidebar'
 import { ACCESS_DENIED, ADMIN_LOGIN, ADMIN_DASHBOARD } from '@/lib/constants/routes'
 import { ADMIN_MAIN_PADDING_CLASS } from '@/lib/constants/layout'
 import { useAdminSession } from '@/hooks/use-admin-session'
+import { isSignupDeniedError } from '@/lib/supabase/auth'
 
 export default function AdminLayout() {
-  const { pathname } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const { session, authLoading, accessDenied } = useAdminSession()
+
+  // Przekierowanie na login gubi query z błędem OAuth, więc rozpoznajemy odmowę zanim do niego dojdzie
+  if (isSignupDeniedError(search, hash)) {
+    return <Navigate to={ACCESS_DENIED} replace />
+  }
 
   if (authLoading) {
     return (

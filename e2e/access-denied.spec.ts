@@ -15,3 +15,8 @@ test.describe('bez zapisanej sesji', () => {
     await expect(page).toHaveURL(/\/admin\/login/)
   })
 })
+
+test('odmowa rejestracji z OAuth kończy na braku uprawnień', async ({ page }) => {
+  await page.goto('/admin/dashboard?error=access_denied&error_code=signup_disabled&error_description=Signups+not+allowed+for+this+instance')
+  await expect(page.getByText(/nie masz uprawnień do tej sekcji strony/i)).toBeVisible()
+})

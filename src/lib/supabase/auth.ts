@@ -25,6 +25,16 @@ export function isAdminSession(session: Session | null): boolean {
   return session?.user.app_metadata?.is_admin === true
 }
 
+/**
+ * Czy powrót z OAuth niesie odmowę rejestracji (obce konto przy wyłączonych rejestracjach).
+ * Supabase zwraca błąd w query, a przy części przepływów w hashu – sprawdzamy oba.
+ */
+export function isSignupDeniedError(search: string, hash: string): boolean {
+  const fromSearch = new URLSearchParams(search)
+  const fromHash = new URLSearchParams(hash.replace(/^#/, ''))
+  return fromSearch.get('error_code') === 'signup_disabled' || fromHash.get('error_code') === 'signup_disabled'
+}
+
 export function signInWithGoogle(redirectTo?: string): void {
   if (!supabase) return
   const url = redirectTo ?? getFullUrlForRoute(ADMIN_DASHBOARD)
