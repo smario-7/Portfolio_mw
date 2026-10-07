@@ -1,12 +1,12 @@
 import { Outlet, useLocation, Navigate } from 'react-router-dom'
 import { Sidebar } from '@/components/admin/Sidebar'
-import { ADMIN_LOGIN, ADMIN_DASHBOARD } from '@/lib/constants/routes'
+import { ACCESS_DENIED, ADMIN_LOGIN, ADMIN_DASHBOARD } from '@/lib/constants/routes'
 import { ADMIN_MAIN_PADDING_CLASS } from '@/lib/constants/layout'
 import { useAdminSession } from '@/hooks/use-admin-session'
 
 export default function AdminLayout() {
   const { pathname } = useLocation()
-  const { session, authLoading } = useAdminSession()
+  const { session, authLoading, accessDenied } = useAdminSession()
 
   if (authLoading) {
     return (
@@ -14,6 +14,10 @@ export default function AdminLayout() {
         <p className="text-muted-foreground">Ładowanie…</p>
       </div>
     )
+  }
+
+  if (accessDenied) {
+    return <Navigate to={ACCESS_DENIED} replace />
   }
 
   const isLoginPage = pathname === ADMIN_LOGIN

@@ -8,6 +8,8 @@ Kolejność wykonania w dashboardzie Supabase:
 
 Reszta Etapu 1 (Google OAuth, Auth → URL Configuration) – patrz [docs/plan-integracja-supabase.md](../../docs/plan-integracja-supabase.md).
 
+Uprawnienia admina: `09-admin-claim.sql` -> nadaj flagę swojemu kontu -> `10-rls-is-admin.sql` (patrz docs/data-structure.md, sekcja 1.6).
+
 Opcjonalnie: po utworzeniu tabeli możesz wstawić dane z repozytorium poleceniem z katalogu głównego projektu:
 `node scripts/supabase/generate-seed.js`
 Następnie wklej wygenerowany SQL do Supabase SQL Editor i uruchom.

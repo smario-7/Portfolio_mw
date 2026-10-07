@@ -17,12 +17,24 @@ function isSameOriginUrl(url: string): boolean {
   }
 }
 
+/**
+ * Czy sesja należy do admina: flaga is_admin w app_metadata (ustawiana tylko po stronie Supabase).
+ * To wyłącznie UX – prawdziwą ochroną jest RLS (public.is_admin()).
+ */
+export function isAdminSession(session: Session | null): boolean {
+  return session?.user.app_metadata?.is_admin === true
+}
+
 export function signInWithGoogle(redirectTo?: string): void {
   if (!supabase) return
   const url = redirectTo ?? getFullUrlForRoute(ADMIN_DASHBOARD)
   if (!isSameOriginUrl(url)) return
   updateSessionActivity()
-  supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: url } })
+  // select_account: po odmowie dostępu można wybrać inne konto Google
+  supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: url, queryParams: { prompt: 'select_account' } },
+  })
 }
 
 export function signOut(): Promise<void> {
