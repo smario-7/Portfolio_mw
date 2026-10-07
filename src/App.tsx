@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { ADMIN_LOGIN, ADMIN_CONTENT_ABOUT, ADMIN_CONTENT_HOME, ADMIN_PROJECTS } from '@/lib/constants/routes'
+import { ACCESS_DENIED, ADMIN_LOGIN, ADMIN_CONTENT_ABOUT, ADMIN_CONTENT_HOME, ADMIN_PROJECTS } from '@/lib/constants/routes'
 import {
   getRouterBasename,
   REDIRECT_STORAGE_KEY,
@@ -13,6 +13,7 @@ import { ErrorBoundary, PageLoader } from '@/components/shared'
 import { PortfolioProvider } from '@/contexts/PortfolioContext'
 import HomePage from '@/pages/HomePage'
 
+const AccessDeniedPage = React.lazy(() => import('@/pages/AccessDeniedPage'))
 const AdminLayout = React.lazy(() => import('@/layouts/AdminLayout'))
 const AdminLoginPage = React.lazy(() => import('@/pages/AdminLoginPage'))
 const AdminDashboardPage = React.lazy(() => import('@/pages/AdminDashboardPage'))
@@ -33,7 +34,8 @@ function RedirectFromStorage({ children }: { children: React.ReactNode }) {
       const path = pathRelativeToBasename(raw.trim(), basename ?? undefined)
       const pathNorm = path.startsWith('/') ? path : `/${path}`
       if (!isSafeInternalPath(pathNorm)) return
-      navigate(pathNorm, { replace: true })
+      // hash niesie tokeny OAuth z powrotu z Google – supabase-js musi go jeszcze odczytać
+      navigate(pathNorm + window.location.hash, { replace: true })
     } catch (_err) {
       // sessionStorage niedostępny lub błąd – ignorujemy
     }
@@ -66,6 +68,8 @@ function App() {
                   <Route path="projects/:id" element={<AdminProjectEditPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                 </Route>
+                <Route path={ACCESS_DENIED} element={<AccessDeniedPage />} />
+                <Route path="*" element={<AccessDeniedPage />} />
               </Routes>
             </React.Suspense>
             <Toaster />

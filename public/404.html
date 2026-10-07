@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Przekierowanie…</title>
+    <script>
+      // GitHub Pages nie zna tras SPA (np. /Portfolio_mw/admin/dashboard po powrocie z Google).
+      // Zapisujemy ścieżkę i wracamy na index; hash (tokeny OAuth) zostaje w URL-u.
+      // Klucz 'redirect' i bazę '/Portfolio_mw/' trzymać zgodnie z app-url.ts i vite.config.ts.
+      try {
+        sessionStorage.setItem('redirect', location.pathname + location.search)
+      } catch (e) {}
+      location.replace('/Portfolio_mw/' + location.hash)
+    </script>
+  </head>
+  <body></body>
+</html>
