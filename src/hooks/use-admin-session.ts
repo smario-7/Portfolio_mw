@@ -5,6 +5,7 @@ import {
   onAuthStateChange,
   updateSessionActivity,
   isSessionTimedOut,
+  isAdminSession,
   signOut
 } from '@/lib/supabase/auth'
 import type { Session } from '@supabase/supabase-js'
@@ -12,6 +13,17 @@ import type { Session } from '@supabase/supabase-js'
 export function useAdminSession() {
   const [session, setSession] = useState<Session | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [accessDenied, setAccessDenied] = useState(false)
+
+  const applySession = useCallback((next: Session | null) => {
+    if (next && !isAdminSession(next)) {
+      signOut()
+      setSession(null)
+      setAccessDenied(true)
+      return
+    }
+    setSession(next)
+  }, [])
 
   const checkSessionTimeout = useCallback(async () => {
     if (isSessionTimedOut()) {
@@ -28,7 +40,7 @@ export function useAdminSession() {
         updateSessionActivity()
         const timedOut = await checkSessionTimeout()
         if (!timedOut) {
-          setSession(data.session)
+          applySession(data.session)
         }
       } else {
         setSession(null)
@@ -43,7 +55,7 @@ export function useAdminSession() {
           updateSessionActivity()
           const timedOut = await checkSessionTimeout()
           if (!timedOut) {
-            setSession(data.session)
+            applySession(data.session)
           }
         } else {
           setSession(null)
@@ -52,7 +64,7 @@ export function useAdminSession() {
         if (session) {
           updateSessionActivity()
         }
-        setSession(session)
+        applySession(session)
       }
     })
 
@@ -83,7 +95,7 @@ export function useAdminSession() {
       })
       clearInterval(intervalId)
     }
-  }, [session, checkSessionTimeout])
+  }, [session, checkSessionTimeout, applySession])
 
-  return { session, authLoading }
+  return { session, authLoading, accessDenied }
 }

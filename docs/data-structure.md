@@ -103,16 +103,11 @@ Ustawienia zalogowanego użytkownika (jeden wiersz na użytkownika). Wymaga Supa
 
 ---
 
-### 1.6 admin_allowed_emails
+### 1.6 Uprawnienia admina (`is_admin`)
 
-Whitelist e-maili uprawnionych do logowania w panelu admina. Używana przez Auth Hook „Before User Created” – tylko adresy z tej tabeli mogą utworzyć konto w `auth.users`.
+Admin to konto z flagą `is_admin: true` w `app_metadata` (trafia do JWT). Użytkownik nie może jej sam zmienić (w przeciwieństwie do `user_metadata`); ustawia ją administrator projektu w SQL Editor. Funkcja `public.is_admin()` czyta flagę z JWT i jest używana w politykach RLS dla `authenticated`. Front (`isAdminSession` w `auth.ts`) tylko wylogowuje obce konta i pokazuje stronę „Brak uprawnień" – to UX, ochroną jest RLS.
 
-| Kolumna   | Typ        | Ograniczenia | Opis |
-|-----------|------------|--------------|------|
-| email     | text       | PRIMARY KEY  | Adres e-mail (lowercase przy porównaniu) |
-| created_at| timestamptz| NOT NULL, default now() | Data dodania |
-
-**Dostęp:** SELECT tylko dla `supabase_auth_admin` (hook). Zarządzanie listą: SQL Editor (INSERT/DELETE jako postgres). Skrypt: `09-admin-email-whitelist.sql`. Po wdrożeniu skryptu: Dashboard → Authentication → Hooks → Before User Created → Postgres function → `hook_admin_email_whitelist`.
+**Skrypty:** `09-admin-claim.sql` (funkcja + instrukcja nadania flagi), `10-rls-is-admin.sql` (polityki). Cofnięcie flagi działa po wygaśnięciu tokenu (domyślnie do 1 h). Opcjonalnie: Dashboard → Authentication → wyłącz rejestrację nowych użytkowników.
 
 ---
 
@@ -125,7 +120,6 @@ Whitelist e-maili uprawnionych do logowania w panelu admina. Używana przez Auth
 | page_views         | INSERT    | SELECT, DELETE |
 | contact_messages   | INSERT    | SELECT, INSERT, UPDATE, DELETE |
 | admin_settings     | —         | SELECT, INSERT, UPDATE tylko własny wiersz |
-| admin_allowed_emails | —       | — (tylko supabase_auth_admin) |
 
 ---
 
@@ -147,7 +141,7 @@ Szczegóły: `scripts/supabase/02-storage-policies.sql`. Bucket tworzony ręczni
 - **update_admin_settings_updated_at** — trigger BEFORE UPDATE na `admin_settings`; ustawia `updated_at := now()`.
 - **check_contact_rate_limit(p_email)** — funkcja: zwraca true, jeśli adres `p_email` nie wysłał wiadomości w ostatnich 10 minut.
 - **trigger_contact_rate_limit** — trigger BEFORE INSERT na `contact_messages`; wywołuje `check_contact_rate_limit` i rzuca wyjątek przy przekroczeniu limitu.
-- **hook_admin_email_whitelist(event)** — Auth Hook „Before User Created”; sprawdza, czy e-mail użytkownika jest w `admin_allowed_emails`; zwraca błąd 403, jeśli nie.
+- **is_admin()** — zwraca true, jeśli JWT ma `app_metadata.is_admin = true`; używana w politykach RLS dla `authenticated`.
 
 ---
 
@@ -166,7 +160,7 @@ Szczegóły: `scripts/supabase/02-storage-policies.sql`. Bucket tworzony ręczni
 5. `04-page_views.sql` (opcjonalnie `04a-`, `04b-` / `05-` przy problemach z politykami)
 6. `06-contact_messages.sql`, `06a-contact_messages_delete_policy.sql`, `06b-contact_messages_authenticated_insert.sql`, `08-contact_messages_rate_limit.sql`, `08b-contact_messages_rate_limit_10min.sql` (opcjonalnie `06c-contact_messages-anon-insert-fix.sql` przy błędzie RLS; przy formularzu publicznym wysyłka idzie przez Edge Function `submit-contact`)
 7. `07-admin_settings.sql` (wymaga włączonego Auth)
-8. `09-admin-email-whitelist.sql` (whitelist e-maili dla panelu admina). Po uruchomieniu: Dashboard → Authentication → Hooks → Before User Created → Postgres function → `hook_admin_email_whitelist`. **Przed włączeniem hooka** dodaj swój e-mail: `insert into public.admin_allowed_emails (email) values ('twoj.email@gmail.com');`
+8. `09-admin-claim.sql`, następnie nadaj flagę swojemu kontu (instrukcja w pliku), wyloguj się i zaloguj ponownie, **dopiero potem** `10-rls-is-admin.sql`.
 
 Opcjonalnie (migracje / uzupełnienia): `03b-migrate-projects-from-app_data.sql` (jednorazowa migracja z app_data), `03c-add-color-if-missing.sql` (dodanie kolumny `color`, gdy brakuje w starszej instalacji).
 

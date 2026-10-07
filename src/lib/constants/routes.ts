@@ -1,3 +1,5 @@
+export const HOME = '/'
+export const ACCESS_DENIED = '/access-denied'
 export const ADMIN_LOGIN = '/admin/login'
 export const ADMIN_DASHBOARD = '/admin/dashboard'
 export const ADMIN_PROJECTS = '/admin/projects'

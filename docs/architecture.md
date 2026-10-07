@@ -105,6 +105,10 @@ Do budowania pełnego adresu (np. po logowaniu, gdy trzeba przekazać URL do zew
 
 Nie sklejamy ręcznie `window.location.origin` + `BASE_URL` + ścieżka – łatwo o błąd przy skomplikowanym BASE_URL.
 
+### Fallback SPA na GitHub Pages i brak uprawnień
+
+GitHub Pages zwraca 404 dla tras SPA (np. powrót z Google na `/admin/dashboard`). `public/404.html` zapisuje ścieżkę w `sessionStorage` (`REDIRECT_STORAGE_KEY`) i wraca na index z zachowanym hashem (tokeny OAuth); `RedirectFromStorage` w `App.tsx` przywraca trasę. Nieznane ścieżki i `ACCESS_DENIED` renderują `AccessDeniedPage`.
+
 ### Gdzie używane
 
 Stałe z `routes.ts` i (gdzie potrzebne) funkcje z `app-url.ts` są używane m.in. w: `App.tsx` (Route, Navigate), `AdminLayout.tsx` (Navigate), `Sidebar.tsx` (linki), `AdminLoginPage.tsx` (redirect po logowaniu), `auth.ts` (redirect po logowaniu), `HomePage.tsx` (link do panelu). W tych miejscach trasy pochodzą wyłącznie z `routes.ts`.
